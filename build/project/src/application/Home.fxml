@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.collections.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.controller.FTPController">
+   <children>
+      <Accordion prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <panes>
+          <TitledPane animated="false" text="Connection details">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                   <children>
+                        <ComboBox onAction="#handleComboBoxSelect" fx:id="selectAccountBox" prefWidth="300.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="15.0" promptText="Pick a host" />
+                        <TextField fx:id="hostDetailsField" prefHeight="25.0" prefWidth="300.0" promptText="Enter you FTP Host details" text="" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="55.0" />
+                        <TextField fx:id="usernameField" prefHeight="25.0" prefWidth="300.0" promptText="Enter your username" text="" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="95.0" />
+                        <PasswordField fx:id="passwordField" prefHeight="25.0" prefWidth="300.0" promptText="Enter your password" text="" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="135.0" />
+                        <CheckBox fx:id="rememberDetails" mnemonicParsing="false" prefHeight="25.0" text="Remember Details" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="175.0" />
+                        <Button onAction="#handleLoginButton" mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0" text="GO" AnchorPane.leftAnchor="214.0" AnchorPane.topAnchor="175.0" />
+                   </children>
+              </AnchorPane>
+            </content>
+          </TitledPane>
+          <TitledPane animated="false" text="File viewer">
+            <content>
+              <AnchorPane>
+                     <children>
+                        <SplitPane dividerPositions="0.4" AnchorPane.bottomAnchor="35.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                          <items>
+                            <AnchorPane minHeight="0.0" minWidth="0.0">
+                                 <children>
+                                    <TreeView AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                 </children>
+                              </AnchorPane>
+                            <AnchorPane minHeight="0.0" minWidth="0.0">
+                                 <children>
+                                    <TableView AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                      <columns>
+                                        <TableColumn fx:id="fileNameCol" minWidth="75.0" prefWidth="75.0" text="File" />
+                                        <TableColumn fx:id="fileSizeCol" prefWidth="75.0" text="Size" />
+                                        <TableColumn fx:id="fileTypeCol" prefWidth="75.0" text="Type" />
+                                      </columns>
+                                    </TableView>
+                                 </children>
+                              </AnchorPane>
+                          </items>
+                        </SplitPane>
+                        <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Refresh" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" />
+                        <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Download" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="15.0" />
+                        <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Edit" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="105.0" />
+                        <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Upload" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="195.0" />
+                     </children>
+                  </AnchorPane>
+            </content>
+          </TitledPane>
+        </panes>
+      </Accordion>
+   </children>
+</AnchorPane>
