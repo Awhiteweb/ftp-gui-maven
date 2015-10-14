@@ -1,30 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
 <?import java.lang.*?>
 <?import javafx.collections.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.controller.FTPController">
+<AnchorPane prefHeight="450.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.controller.FTPController">
    <children>
-      <Accordion prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <Button mnemonicParsing="false" onAction="#handleClose" text="Close" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+      <Accordion fx:id="accordian" prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
         <panes>
-          <TitledPane animated="false" text="Connection details">
+          <TitledPane fx:id="connectionTitledPane" animated="false" text="Connection details">
             <content>
-              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+              <AnchorPane>
                    <children>
-                        <ComboBox onAction="#handleComboBoxSelect" fx:id="selectAccountBox" prefWidth="300.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="15.0" promptText="Pick a host" />
+                        <ComboBox fx:id="selectAccountBox" onAction="#handleComboBoxSelect" prefWidth="300.0" promptText="Pick a host" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="15.0" />
                         <TextField fx:id="hostDetailsField" prefHeight="25.0" prefWidth="300.0" promptText="Enter you FTP Host details" text="" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="55.0" />
                         <TextField fx:id="usernameField" prefHeight="25.0" prefWidth="300.0" promptText="Enter your username" text="" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="95.0" />
                         <PasswordField fx:id="passwordField" prefHeight="25.0" prefWidth="300.0" promptText="Enter your password" text="" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="135.0" />
-                        <CheckBox fx:id="rememberDetails" mnemonicParsing="false" prefHeight="25.0" text="Remember Details" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="175.0" />
-                        <Button onAction="#handleLoginButton" mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0" text="GO" AnchorPane.leftAnchor="214.0" AnchorPane.topAnchor="175.0" />
+						<TextField fx:id="directoryField" prefHeight="25.0" prefWidth="300.0" promptText="Enter the directory path" text="" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="175.0" />
+                        <CheckBox fx:id="rememberDetails" mnemonicParsing="false" prefHeight="25.0" text="Remember Details" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="215.0" />
+                        <Button mnemonicParsing="false" onAction="#handleLoginButton" prefHeight="25.0" prefWidth="100.0" text="GO" AnchorPane.leftAnchor="214.0" AnchorPane.topAnchor="215.0" />
                    </children>
               </AnchorPane>
             </content>
           </TitledPane>
-          <TitledPane animated="false" text="File viewer">
+          <TitledPane fx:id="fileViewerTitledPane" animated="false" text="File viewer">
             <content>
               <AnchorPane>
                      <children>
@@ -54,6 +62,22 @@
                         <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Upload" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="195.0" />
                      </children>
                   </AnchorPane>
+            </content>
+          </TitledPane>
+          <TitledPane fx:id="consoleTitledPane" animated="false" text="Console log">
+            <content>
+              <AnchorPane>
+                <children>
+               	  <ScrollPane id="consolePane" fx:id="consoleScrollPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <content>
+                  	  <TextArea fx:id="consoleTextLabel" text="" wrapText="true">
+                                 <font>
+                                    <Font name="Consolas" size="12.0" />
+                                 </font></TextArea>
+                    </content>
+                  </ScrollPane>
+                </children>
+              </AnchorPane>
             </content>
           </TitledPane>
         </panes>

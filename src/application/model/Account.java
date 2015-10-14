@@ -5,21 +5,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Account
 {
-	@JsonProperty("account")
-	private String account; 
-	@JsonProperty("username")
-	private String username;
-	@JsonProperty("password")
-	private String password;
+	@JsonProperty("account") private String account; 
+	@JsonProperty("username") private String username;
+	@JsonProperty("password") private String password;
+	@JsonProperty("directory") private String directory;
 
 	@JsonCreator
 	public Account( @JsonProperty("account") String account, 
 					@JsonProperty("username") String username,
-					@JsonProperty("password") String password )
+					@JsonProperty("password") String password,
+					@JsonProperty("directory") String directory )
 	{
 		this.account = account;
 		this.username = username;
 		this.password = password;
+		this.directory = directory;
 	}
 	
 	public String getAccount()
@@ -50,5 +50,15 @@ public class Account
 	public void setPassword( String password )
 	{
 		this.password = password;
+	}
+
+	public String getDirectory()
+	{
+		return directory;
+	}
+
+	public void setDirectory( String directory )
+	{
+		this.directory = directory;
 	}
 }

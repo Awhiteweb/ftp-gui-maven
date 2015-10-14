@@ -14,7 +14,7 @@ public class Main extends Application {
 		try {
 			URL url = getClass().getResource( "Home.fxml" );
 			Parent root = FXMLLoader.load( url );
-			Scene scene = new Scene(root,650,350);
+			Scene scene = new Scene(root,650,400);
 			scene.getStylesheets().add( getClass().getResource("application.css").toExternalForm() );
 			primaryStage.setScene(scene);
 			primaryStage.show();
@@ -22,7 +22,7 @@ public class Main extends Application {
 			e.printStackTrace();
 		}
 	}
-	
+		
 	public static void main(String[] args) {
 		launch(args);
 	}
