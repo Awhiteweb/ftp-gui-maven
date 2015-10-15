@@ -3,3 +3,5 @@ resources/accounts.json
 .project
 .settings
 *.class
+bin
+
