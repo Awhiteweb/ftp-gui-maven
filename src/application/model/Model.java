@@ -66,7 +66,7 @@ public class Model
 			configure();
 		try
 		{
-			ftp.connect( connDetails.get( "hots" ) );
+			ftp.connect( connDetails.get( "host" ) );
 			ftp.login( connDetails.get( "username" ), 
 					   connDetails.get( "password" ) );
 			ftpReplyCode = ftp.getReplyCode();
@@ -77,7 +77,7 @@ public class Model
 				System.err.println( "FTP server refused connection." );
 				System.exit(1);
 			}
-			return "connected to server";
+			return "connected to server: reply code - " + ftpReplyCode;
 		}
 		catch (IOException e)
 		{
@@ -126,6 +126,7 @@ public class Model
 			ftpFileArray = ftp.listFiles();
 			for ( FTPFile file : ftpFileArray )
 			{
+				System.out.printf( "File name: %s%nfile type: %d%n", file.getName(), file.getType() );
 				files.add( new FileDetails( file ) );
 			}
 		}
