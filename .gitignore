@@ -4,4 +4,6 @@ resources/accounts.json
 .settings
 *.class
 bin
+build
+
 
