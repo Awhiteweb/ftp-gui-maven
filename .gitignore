@@ -5,5 +5,5 @@ resources/accounts.json
 *.class
 bin
 build
-
+*.log
 

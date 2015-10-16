@@ -4,6 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,25 +17,30 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
+import org.apache.derby.jdbc.EmbeddedDriver;
 
-import application.model.Account;
+import application.database.Connector;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 public class Model
-{
-	public static final ObservableList<String> HOSTS = FXCollections.observableArrayList( "ftp.whiteslife.com", "php.dev.ovalbusinesssolutions.co.uk" );
+{	
 	private ObservableList<String> accounts;
 	private HashMap<String, Account> loginDetails;
 	private static FTPClient ftp;
 	private static FTPClientConfig config;
 	private int ftpReplyCode;
 	private FTPFile[] ftpFileArray;
+	private Connector conn;
+	
 
 	public Model()
 	{
 		accounts = FXCollections.observableArrayList();
 		loginDetails = new HashMap<String, Account>();
+		// read database and put all accounts into a dropdown list
+		conn = new Connector();
+		conn.getAccountsFromSQL();
 		JsonReader reader = new JsonReader();
 		Accounts accs = reader.getData();
 		for ( Account acc : accs.getAccounts() )
@@ -53,22 +62,22 @@ public class Model
 	/**
 	 * returns the username and password for the given account
 	 * @param host account
-	 * @return String[] of username, passsword
+	 * @return Account object with all details
 	 */
 	public Account getLoginDetails( String account )
 	{
 		return loginDetails.get( account );
 	}
 	
-	public String connect( HashMap<String, String> connDetails )
+	public String connect( HashMap<HashKeys, String> connDetails )
 	{
 		if ( ftp == null )
 			configure();
 		try
 		{
-			ftp.connect( connDetails.get( "host" ) );
-			ftp.login( connDetails.get( "username" ), 
-					   connDetails.get( "password" ) );
+			ftp.connect( connDetails.get( HashKeys.HOST ) );
+			ftp.login( connDetails.get( HashKeys.USERNAME ), 
+					   connDetails.get( HashKeys.PASSWORD ) );
 			ftpReplyCode = ftp.getReplyCode();
 			ftp.setControlKeepAliveTimeout(300); // stays alive for 5 mins
 			if( !FTPReply.isPositiveCompletion( ftpReplyCode ) )
@@ -77,6 +86,7 @@ public class Model
 				System.err.println( "FTP server refused connection." );
 				System.exit(1);
 			}
+			ftp.changeWorkingDirectory( connDetails.get( HashKeys.PATH ) );
 			return "connected to server: reply code - " + ftpReplyCode;
 		}
 		catch (IOException e)

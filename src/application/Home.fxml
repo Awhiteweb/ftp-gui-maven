@@ -59,10 +59,10 @@
                               </AnchorPane>
                           </items>
                         </SplitPane>
-                        <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Refresh" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" />
-                        <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Download" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="15.0" />
-                        <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Edit" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="105.0" />
-                        <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Upload" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="195.0" />
+                        <Button onAction="#handleRefresh" mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Refresh" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" />
+                        <Button onAction="#handleDownload" mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Download" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="15.0" />
+                        <Button onAction="#handleEdit" mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Edit" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="105.0" />
+                        <Button onAction="#handleUpload" mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Upload" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="195.0" />
                      </children>
                   </AnchorPane>
             </content>

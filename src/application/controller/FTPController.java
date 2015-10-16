@@ -14,7 +14,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -27,6 +26,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.shape.Ellipse;
 import application.model.Account;
 import application.model.FileDetails;
+import application.model.HashKeys;
 import application.model.Model;
 
 public class FTPController implements Initializable
@@ -52,7 +52,7 @@ public class FTPController implements Initializable
 	private ObservableList<FileDetails> tableViewList;
 	private Model model;
 	private List<FileDetails> files;
-	private HashMap<String, String> connDetails;
+	private HashMap<HashKeys, String> connDetails;
 	
 	@Override
 	public void initialize( URL arg0, ResourceBundle arg1 )
@@ -82,12 +82,12 @@ public class FTPController implements Initializable
 
 		accordian.setExpandedPane( fileViewerTitledPane );
 		wTc( "connecting" );
-		connDetails = new HashMap<String, String>();
-		connDetails.put( "host", hostDetailsField.getText() );
-		connDetails.put( "username", usernameField.getText() );
-		connDetails.put( "password", passwordField.getText() );
-		connDetails.put( "directory", directoryField.getText() );
-		wTc( String.format( "Connecting to: %nHost: %s,%nUser: %s", connDetails.get( "host" ), connDetails.get( "username" ) ) );
+		connDetails = new HashMap<HashKeys, String>();
+		connDetails.put( HashKeys.HOST, hostDetailsField.getText() );
+		connDetails.put( HashKeys.USERNAME, usernameField.getText() );
+		connDetails.put( HashKeys.PASSWORD, passwordField.getText() );
+		connDetails.put( HashKeys.PATH, directoryField.getText() );
+		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", connDetails.get( HashKeys.HOST ), connDetails.get( HashKeys.USERNAME ) ) );
 		wTc( model.connect( connDetails ) );
 		files = model.getFileList();
 		wTc( "populating file viewer" );
@@ -101,6 +101,30 @@ public class FTPController implements Initializable
 	{
 		model.logout();
 		Platform.exit();
+	}
+	
+	@FXML
+	public void handleRefresh(ActionEvent event)
+	{
+		
+	}
+
+	@FXML
+	public void handleDownload(ActionEvent event)
+	{
+		
+	}
+	
+	@FXML
+	public void handleUpload(ActionEvent event)
+	{
+		
+	}
+	
+	@FXML
+	public void handleEdit(ActionEvent event)
+	{
+		
 	}
 
 	public Model getModel()
