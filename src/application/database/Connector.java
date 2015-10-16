@@ -15,7 +15,7 @@ import java.util.List;
 public class Connector
 {
 	private Connection conn;
-	private String dbURL = "jdbc:derby:C:/Users/Alex.White/MyDB/root;create=true";
+	private String dbURL = "jdbc:derby:database;create=true";
 	private String user = "root";
 	private String password = "password";
 
@@ -39,9 +39,24 @@ public class Connector
 		conn = DriverManager.getConnection( dbURL, user, password );
 		if ( conn != null )
 			System.out.println( "connect to db" );
+		exists();
 		getMetaData();
 	}
 	
+	private void exists()
+	{
+		try
+		{
+			if ( conn.getSchema() == null )
+				conn.createStatement().executeQuery( "create new database" );
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+		
+	}
+
 	private void getMetaData()
 	{
 		String[] types = {"TABLE"};
