@@ -6,4 +6,5 @@ resources/accounts.json
 bin
 build
 *.log
+.DS_Store
 

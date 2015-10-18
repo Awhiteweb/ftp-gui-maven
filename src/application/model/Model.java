@@ -40,10 +40,8 @@ public class Model
 		loginDetails = new HashMap<String, Account>();
 		// read database and put all accounts into a dropdown list
 		conn = new Connector();
-		conn.getAccountsFromSQL();
-		JsonReader reader = new JsonReader();
-		Accounts accs = reader.getData();
-		for ( Account acc : accs.getAccounts() )
+		List<Account> accs = conn.getAccountsFromSQL();
+		for ( Account acc : accs )
 		{
 			accounts.add( acc.getAccount() );
 			loginDetails.put( acc.getAccount(), acc );

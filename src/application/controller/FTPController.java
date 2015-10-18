@@ -1,6 +1,7 @@
 package application.controller;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -49,6 +50,7 @@ public class FTPController implements Initializable
 	@FXML private TitledPane consoleTitledPane;
 	@FXML private TextArea consoleTextLabel;
 	@FXML private TableView<FileDetails> tableView;
+	private List<String> currentPath;
 	private ObservableList<FileDetails> tableViewList;
 	private Model model;
 	private List<FileDetails> files;
@@ -62,10 +64,11 @@ public class FTPController implements Initializable
 		this.accordian.setExpandedPane( connectionTitledPane );
 		consoleTextLabel.setEditable( false );
 		initTable();
+		currentPath = new ArrayList<String>();
 	}
 
 	@FXML 
-	public void handleComboBoxSelect(ActionEvent event) 
+	public void handleComboBoxSelect( ActionEvent event ) 
 	{
 		Account account = getModel().getLoginDetails( selectAccountBox.getSelectionModel().getSelectedItem() );
 		hostDetailsField.setText( selectAccountBox.getSelectionModel().getSelectedItem() );
@@ -75,7 +78,7 @@ public class FTPController implements Initializable
 	}
 	
 	@FXML 
-	public void handleLoginButton(ActionEvent event) 
+	public void handleLoginButton( ActionEvent event ) 
 	{
 		if ( model != null )
 			model.logout();
@@ -86,6 +89,7 @@ public class FTPController implements Initializable
 		connDetails.put( HashKeys.HOST, hostDetailsField.getText() );
 		connDetails.put( HashKeys.USERNAME, usernameField.getText() );
 		connDetails.put( HashKeys.PASSWORD, passwordField.getText() );
+		currentPath.add( directoryField.getText() );
 		connDetails.put( HashKeys.PATH, directoryField.getText() );
 		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", connDetails.get( HashKeys.HOST ), connDetails.get( HashKeys.USERNAME ) ) );
 		wTc( model.connect( connDetails ) );
@@ -97,36 +101,42 @@ public class FTPController implements Initializable
 	}
 
 	@FXML 
-	public void handleClose(ActionEvent event) 
+	public void handleClose( ActionEvent event ) 
 	{
 		model.logout();
 		Platform.exit();
 	}
 	
 	@FXML
-	public void handleRefresh(ActionEvent event)
+	public void handleRefresh( ActionEvent event )
 	{
 		
 	}
 
 	@FXML
-	public void handleDownload(ActionEvent event)
+	public void handleDownload( ActionEvent event )
 	{
 		
 	}
 	
 	@FXML
-	public void handleUpload(ActionEvent event)
+	public void handleUpload( ActionEvent event )
 	{
 		
 	}
 	
 	@FXML
-	public void handleEdit(ActionEvent event)
+	public void handleEdit( ActionEvent event )
 	{
 		
 	}
 
+	@FXML
+	public void handleTreeView( ActionEvent event )
+	{
+		System.out.println( "tree event" );
+	}
+	
 	public Model getModel()
 	{
 		if ( model == null )
