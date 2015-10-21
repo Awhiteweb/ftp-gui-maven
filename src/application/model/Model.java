@@ -151,7 +151,7 @@ public class Model
 			for ( FTPFile file : ftpFileArray )
 			{
 				System.out.printf( "File type: %d | File name: %s%n", file.getName(), file.getType() );
-				files.add( new FileDetails( file ) );
+				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
 			}
 		}
 		catch (IOException e)
@@ -161,6 +161,21 @@ public class Model
 		return files;
 	}
 	
+	private String fileType( int type )
+	{
+		switch( type )
+		{
+		case 0:
+			return "file";
+		case 1:
+			return "directory";
+		case 2:
+			return "symbolic link";
+		default:
+			return "unkown";
+		}
+	}
+
 	private void configure()
 	{
 		ftp = new FTPClient();
