@@ -7,4 +7,6 @@ bin
 build
 *.log
 .DS_Store
+database
+myTestDB
 
