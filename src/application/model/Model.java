@@ -38,9 +38,8 @@ public class Model
 	{
 		accounts = FXCollections.observableArrayList();
 		loginDetails = new HashMap<String, Account>();
-		// read database and put all accounts into a dropdown list
 		conn = new Connector();
-		List<Account> accs = conn.getAccountsFromSQL();
+		List<Account> accs = conn.getAccounts();
 		for ( Account acc : accs )
 		{
 			accounts.add( acc.getAccount() );
@@ -73,6 +72,8 @@ public class Model
 			configure();
 		try
 		{
+			if ( connDetails.get( HashKeys.REMEMBER ).equals( "true" ) )
+				addHost( connDetails );
 			ftp.connect( connDetails.get( HashKeys.HOST ) );
 			ftp.login( connDetails.get( HashKeys.USERNAME ), 
 					   connDetails.get( HashKeys.PASSWORD ) );
@@ -91,13 +92,6 @@ public class Model
 		{
 			return e.getMessage();
 		}
-	}
-	
-	private void configure()
-	{
-		ftp = new FTPClient();
-		config = new FTPClientConfig();
-		ftp.configure( config );
 	}
 	
 	public void logout()
@@ -145,6 +139,20 @@ public class Model
 		return files;
 	}
 	
+	private void configure()
+	{
+		ftp = new FTPClient();
+		config = new FTPClientConfig();
+		ftp.configure( config );
+	}
+	
+	private void addHost( HashMap<HashKeys, String> connDetails )
+	{
+		conn = new Connector();
+		if ( conn.addAccount( connDetails ) )
+			System.out.println( "account added" );
+	}
+
 	private void download( String dir, String file )
 	{
 		String dl = dir + "/" + file;

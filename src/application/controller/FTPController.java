@@ -82,15 +82,16 @@ public class FTPController implements Initializable
 	{
 		if ( model != null )
 			model.logout();
-
+		Boolean remember = rememberDetails.isSelected();
 		accordian.setExpandedPane( fileViewerTitledPane );
 		wTc( "connecting" );
 		connDetails = new HashMap<HashKeys, String>();
 		connDetails.put( HashKeys.HOST, hostDetailsField.getText() );
 		connDetails.put( HashKeys.USERNAME, usernameField.getText() );
 		connDetails.put( HashKeys.PASSWORD, passwordField.getText() );
-		currentPath.add( directoryField.getText() );
 		connDetails.put( HashKeys.PATH, directoryField.getText() );
+		connDetails.put( HashKeys.REMEMBER, remember.toString() );
+		currentPath.add( directoryField.getText() );
 		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", connDetails.get( HashKeys.HOST ), connDetails.get( HashKeys.USERNAME ) ) );
 		wTc( model.connect( connDetails ) );
 		files = model.getFileList();
