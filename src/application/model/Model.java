@@ -4,24 +4,20 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
-import org.apache.derby.jdbc.EmbeddedDriver;
 
 import application.database.Connector;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 
 public class Model
 {	
@@ -33,7 +29,15 @@ public class Model
 	private FTPFile[] ftpFileArray;
 	private Connector conn;
 	
-
+	/**
+	 * sets up model 
+	 * initialises observable list of accounts
+	 * initialises hashmap for login accounts
+	 * initialises database connector
+	 * retrieves existing accounts from database
+	 * adds the account host names to the observable list
+	 * adds the accounts to the hashmap
+	 */
 	public Model()
 	{
 		accounts = FXCollections.observableArrayList();
@@ -66,6 +70,11 @@ public class Model
 		return loginDetails.get( account );
 	}
 	
+	/**
+	 * Connects to the ftp server
+	 * @param connDetails
+	 * @return string message for apps console log
+	 */
 	public String connect( HashMap<HashKeys, String> connDetails )
 	{
 		if ( ftp == null )
@@ -94,6 +103,9 @@ public class Model
 		}
 	}
 	
+	/**
+	 * logs out of the ftp server
+	 */
 	public void logout()
 	{
 		if( ftp != null && ftp.isConnected() )
@@ -110,6 +122,12 @@ public class Model
 			}
 	}
 	
+	/**
+	 * used to change directory of on the ftp server
+	 * @param dir String directory to change to
+	 * @return boolean of success or failure
+	 * @throws IOException
+	 */
 	public boolean changeDirectory( String dir ) throws IOException
 	{
 		if ( ftp.isConnected() )
@@ -120,6 +138,10 @@ public class Model
 		return false;
 	}
 	
+	/**
+	 * gets a list of the files available
+	 * @return List<FileDetails>
+	 */
 	public List<FileDetails> getFileList()
 	{
 		List<FileDetails> files = new ArrayList<FileDetails>();
@@ -128,7 +150,7 @@ public class Model
 			ftpFileArray = ftp.listFiles();
 			for ( FTPFile file : ftpFileArray )
 			{
-				System.out.printf( "File name: %s%nfile type: %d%n", file.getName(), file.getType() );
+				System.out.printf( "File type: %d | File name: %s%n", file.getName(), file.getType() );
 				files.add( new FileDetails( file ) );
 			}
 		}
