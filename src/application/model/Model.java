@@ -1,5 +1,6 @@
 package application.model;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -8,8 +9,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.imageio.ImageIO;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
+import javafx.scene.Node;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
@@ -150,7 +158,7 @@ public class Model
 			ftpFileArray = ftp.listFiles();
 			for ( FTPFile file : ftpFileArray )
 			{
-				System.out.printf( "File type: %d | File name: %s%n", file.getName(), file.getType() );
+				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
 				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
 			}
 		}
@@ -160,6 +168,55 @@ public class Model
 		}
 		return files;
 	}
+	
+	/**
+	 * opens a file explorer window
+	 * @param event
+	 * @param desktop
+	 * @param direction: <ul><li><strong>true</strong> to download or </li>
+	 * 					 <li><strong>false</strong> to upload</li></ul>
+	 */
+	public void openFileChooser( ActionEvent event, Desktop desktop, boolean direction )
+	{
+		FileChooser fileChooser = new FileChooser();
+		if ( direction )
+		{
+			fileChooser.setTitle( "download file to..." );
+			fileChooser.setInitialFileName( "file.txt" );
+			File file = fileChooser.showOpenDialog( getStage( event ) );
+			if ( file != null ) {
+				save( file );
+			}
+		}
+		else
+		{
+			fileChooser.setTitle( "File(s) to upload" );
+			List<File> list = fileChooser.showOpenMultipleDialog( getStage( event ) );
+			if ( list != null ) {
+	            for ( File file : list ) {
+	                openFile( file, desktop );
+	            }
+	        }
+		}
+	}
+	
+	private void save( File file )
+	{
+		// TODO: download files from server
+	}
+
+	private void openFile( File file, Desktop desktop  ) 
+	{
+		// TODO: upload files from server
+        try 
+        {
+            desktop.open( file );
+        } 
+        catch ( IOException ex ) 
+        {
+        	ex.printStackTrace();
+        }
+    }
 	
 	private String fileType( int type )
 	{
@@ -221,6 +278,12 @@ public class Model
 			System.err.println( "upload error" );
 			ioe.printStackTrace();
 		}
+	}
+	
+	private Stage getStage( ActionEvent event )
+	{
+		Node node = (Node) event.getSource();
+		return (Stage) node.getScene().getWindow();
 	}
 		
 }
