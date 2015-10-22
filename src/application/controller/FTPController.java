@@ -1,5 +1,8 @@
 package application.controller;
 
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,9 +13,13 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Accordion;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ScrollPane;
@@ -25,6 +32,8 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.shape.Ellipse;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import application.model.Account;
 import application.model.FileDetails;
 import application.model.HashKeys;
@@ -50,6 +59,11 @@ public class FTPController implements Initializable
 	@FXML private TitledPane consoleTitledPane;
 	@FXML private TextArea consoleTextLabel;
 	@FXML private TableView<FileDetails> tableView;
+	@FXML private Button refreshButton;
+	@FXML private Button downloadButton;
+	@FXML private Button editButton;
+	@FXML private Button uploadButton;
+	private Desktop desktop = Desktop.getDesktop();
 	private List<String> currentPath;
 	private ObservableList<FileDetails> tableViewList;
 	private Model model;
@@ -84,15 +98,16 @@ public class FTPController implements Initializable
 		
 		if ( model != null )
 			model.logout();
-
+		Boolean remember = rememberDetails.isSelected();
 		accordian.setExpandedPane( fileViewerTitledPane );
 		wTc( "connecting" );
 		connDetails = new HashMap<HashKeys, String>();
 		connDetails.put( HashKeys.HOST, hostDetailsField.getText() );
 		connDetails.put( HashKeys.USERNAME, usernameField.getText() );
 		connDetails.put( HashKeys.PASSWORD, passwordField.getText() );
-		currentPath.add( directoryField.getText() );
 		connDetails.put( HashKeys.PATH, directoryField.getText() );
+		connDetails.put( HashKeys.REMEMBER, remember.toString() );
+		currentPath.add( directoryField.getText() );
 		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", connDetails.get( HashKeys.HOST ), connDetails.get( HashKeys.USERNAME ) ) );
 		wTc( model.connect( connDetails ) );
 		files = model.getFileList();
@@ -118,13 +133,13 @@ public class FTPController implements Initializable
 	@FXML
 	public void handleDownload( ActionEvent event )
 	{
-		
+		model.openFileChooser( event, desktop, true );
 	}
 	
 	@FXML
 	public void handleUpload( ActionEvent event )
 	{
-		
+		model.openFileChooser( event, desktop, false );
 	}
 	
 	@FXML
@@ -187,7 +202,5 @@ public class FTPController implements Initializable
 		root.setExpanded( true );
 		treeView.setRoot( root );
 	}
-
-
 
 }

@@ -1,27 +1,31 @@
 package application.model;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import javax.imageio.ImageIO;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
+import javafx.scene.Node;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
-import org.apache.derby.jdbc.EmbeddedDriver;
 
 import application.database.Connector;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 
 public class Model
 {	
@@ -33,14 +37,21 @@ public class Model
 	private FTPFile[] ftpFileArray;
 	private Connector conn;
 	
-
+	/**
+	 * sets up model 
+	 * initialises observable list of accounts
+	 * initialises hashmap for login accounts
+	 * initialises database connector
+	 * retrieves existing accounts from database
+	 * adds the account host names to the observable list
+	 * adds the accounts to the hashmap
+	 */
 	public Model()
 	{
 		accounts = FXCollections.observableArrayList();
 		loginDetails = new HashMap<String, Account>();
-		// read database and put all accounts into a dropdown list
 		conn = new Connector();
-		List<Account> accs = conn.getAccountsFromSQL();
+		List<Account> accs = conn.getAccounts();
 		for ( Account acc : accs )
 		{
 			accounts.add( acc.getAccount() );
@@ -67,12 +78,19 @@ public class Model
 		return loginDetails.get( account );
 	}
 	
+	/**
+	 * Connects to the ftp server
+	 * @param connDetails
+	 * @return string message for apps console log
+	 */
 	public String connect( HashMap<HashKeys, String> connDetails )
 	{
 		if ( ftp == null )
 			configure();
 		try
 		{
+			if ( connDetails.get( HashKeys.REMEMBER ).equals( "true" ) )
+				addHost( connDetails );
 			ftp.connect( connDetails.get( HashKeys.HOST ) );
 			ftp.login( connDetails.get( HashKeys.USERNAME ), 
 					   connDetails.get( HashKeys.PASSWORD ) );
@@ -93,13 +111,9 @@ public class Model
 		}
 	}
 	
-	private void configure()
-	{
-		ftp = new FTPClient();
-		config = new FTPClientConfig();
-		ftp.configure( config );
-	}
-	
+	/**
+	 * logs out of the ftp server
+	 */
 	public void logout()
 	{
 		if( ftp != null && ftp.isConnected() )
@@ -116,6 +130,12 @@ public class Model
 			}
 	}
 	
+	/**
+	 * used to change directory of on the ftp server
+	 * @param dir String directory to change to
+	 * @return boolean of success or failure
+	 * @throws IOException
+	 */
 	public boolean changeDirectory( String dir ) throws IOException
 	{
 		if ( ftp.isConnected() )
@@ -126,6 +146,10 @@ public class Model
 		return false;
 	}
 	
+	/**
+	 * gets a list of the files available
+	 * @return List<FileDetails>
+	 */
 	public List<FileDetails> getFileList()
 	{
 		List<FileDetails> files = new ArrayList<FileDetails>();
@@ -134,8 +158,8 @@ public class Model
 			ftpFileArray = ftp.listFiles();
 			for ( FTPFile file : ftpFileArray )
 			{
-				System.out.printf( "File name: %s%nfile type: %d%n", file.getName(), file.getType() );
-				files.add( new FileDetails( file ) );
+				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
+				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
 			}
 		}
 		catch (IOException e)
@@ -145,6 +169,84 @@ public class Model
 		return files;
 	}
 	
+	/**
+	 * opens a file explorer window
+	 * @param event
+	 * @param desktop
+	 * @param direction: <ul><li><strong>true</strong> to download or </li>
+	 * 					 <li><strong>false</strong> to upload</li></ul>
+	 */
+	public void openFileChooser( ActionEvent event, Desktop desktop, boolean direction )
+	{
+		FileChooser fileChooser = new FileChooser();
+		if ( direction )
+		{
+			fileChooser.setTitle( "download file to..." );
+			fileChooser.setInitialFileName( "file.txt" );
+			File file = fileChooser.showOpenDialog( getStage( event ) );
+			if ( file != null ) {
+				save( file );
+			}
+		}
+		else
+		{
+			fileChooser.setTitle( "File(s) to upload" );
+			List<File> list = fileChooser.showOpenMultipleDialog( getStage( event ) );
+			if ( list != null ) {
+	            for ( File file : list ) {
+	                openFile( file, desktop );
+	            }
+	        }
+		}
+	}
+	
+	private void save( File file )
+	{
+		// TODO: download files from server
+	}
+
+	private void openFile( File file, Desktop desktop  ) 
+	{
+		// TODO: upload files from server
+        try 
+        {
+            desktop.open( file );
+        } 
+        catch ( IOException ex ) 
+        {
+        	ex.printStackTrace();
+        }
+    }
+	
+	private String fileType( int type )
+	{
+		switch( type )
+		{
+		case 0:
+			return "file";
+		case 1:
+			return "directory";
+		case 2:
+			return "symbolic link";
+		default:
+			return "unkown";
+		}
+	}
+
+	private void configure()
+	{
+		ftp = new FTPClient();
+		config = new FTPClientConfig();
+		ftp.configure( config );
+	}
+	
+	private void addHost( HashMap<HashKeys, String> connDetails )
+	{
+		conn = new Connector();
+		if ( conn.addAccount( connDetails ) )
+			System.out.println( "account added" );
+	}
+
 	private void download( String dir, String file )
 	{
 		String dl = dir + "/" + file;
@@ -176,6 +278,12 @@ public class Model
 			System.err.println( "upload error" );
 			ioe.printStackTrace();
 		}
+	}
+	
+	private Stage getStage( ActionEvent event )
+	{
+		Node node = (Node) event.getSource();
+		return (Stage) node.getScene().getWindow();
 	}
 		
 }

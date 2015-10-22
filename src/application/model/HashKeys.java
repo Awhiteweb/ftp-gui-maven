@@ -5,7 +5,8 @@ public enum HashKeys
 	HOST( "host", 0 ),
 	USERNAME( "username", 1 ),
 	PASSWORD( "password", 2 ),
-	PATH( "path", 3 );
+	PATH( "path", 3 ), 
+	REMEMBER( "remember", 4 );
 	
 	
 	private String name;
