@@ -80,6 +80,8 @@ public class FTPController implements Initializable
 	@FXML 
 	public void handleLoginButton( ActionEvent event ) 
 	{
+		boolean remember = rememberDetails.isSelected();
+		
 		if ( model != null )
 			model.logout();
 
