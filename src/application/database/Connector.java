@@ -24,9 +24,6 @@ public class Connector
 	public static void main(String[] args)
 	{
 		Connector c = new Connector();
-//		HashMap<HashKeys, String> map = new HashMap<HashKeys, String>();
-//		map.put( HashKeys.HOST, "ftp.whiteslife.com" );
-//		c.removeAccount( map );
 		for ( Account account : c.getAccounts() )
 		{
 			System.out.printf( "dir: %s%nuser: %s%n", account.getDirectory(), account.getUsername() );

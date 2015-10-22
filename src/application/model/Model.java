@@ -136,12 +136,19 @@ public class Model
 	 * @return boolean of success or failure
 	 * @throws IOException
 	 */
-	public boolean changeDirectory( String dir ) throws IOException
+	public boolean changeDirectory( String dir )
 	{
 		if ( ftp.isConnected() )
 		{
-			ftp.changeWorkingDirectory( dir );
-			return true;
+			try
+			{
+				ftp.changeWorkingDirectory( dir );
+				return true;
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
 		}
 		return false;
 	}
@@ -168,7 +175,31 @@ public class Model
 		}
 		return files;
 	}
-	
+
+	/**
+	 * gets a list of the files available
+	 * @return List<FileDetails>
+	 */
+	public List<FileDetails> getFileList( String dir )
+	{
+		changeDirectory( dir );
+		List<FileDetails> files = new ArrayList<FileDetails>();
+		try
+		{
+			ftpFileArray = ftp.listFiles();
+			for ( FTPFile file : ftpFileArray )
+			{
+				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
+				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
+			}
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		return files;
+	}
+
 	/**
 	 * opens a file explorer window
 	 * @param event
