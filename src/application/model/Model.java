@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -13,6 +14,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
+import javafx.scene.control.TreeItem;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -313,5 +315,31 @@ public class Model
 		Node node = (Node) event.getSource();
 		return (Stage) node.getScene().getWindow();
 	}
+
+	public List<TreeItem<String>> getTreeItems( String dir )
+	{
+		List<TreeItem<String>> root = new ArrayList<TreeItem<String>>(); 
 		
+		for ( FileDetails f : getFileList( dir ) )
+		{
+			TreeItem<String> child = addChild( f );
+			if ( child != null )
+			{					
+				root.add( child );
+			}
+		}
+		Collections.sort( root, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
+									t1.getValue().compareToIgnoreCase( t2.getValue() ) );
+		return root;
+	}
+	
+	private TreeItem<String> addChild( FileDetails f )
+	{
+		if ( f.getType().equals( "directory" ) && !f.getName().startsWith( "." ) )
+			return new TreeItem<String>( f.getName() );
+		else
+			return null;
+	}
+	
+
 }
