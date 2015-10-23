@@ -1,11 +1,16 @@
+package test;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-
-public class EditDB throws SQLException
+public class EditDB
 {
 	public static final String SQL_STATEMENT = "select * from channels";
 
-	public static void main( Strings[] args ) throws SQLException
+	public static void main( String[] args ) throws SQLException
 	{
 		Connection connection = DriverManager.getConnection( CreateDB.JDBC_URL );
 		Statement statement = connection.createStatement();
