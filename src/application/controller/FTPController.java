@@ -1,10 +1,9 @@
 package application.controller;
 
 import java.awt.Desktop;
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -13,16 +12,14 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -31,13 +28,13 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Ellipse;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import application.model.Account;
 import application.model.FileDetails;
 import application.model.HashKeys;
 import application.model.Model;
+import application.model.Path;
 
 public class FTPController implements Initializable
 {
@@ -63,11 +60,12 @@ public class FTPController implements Initializable
 	@FXML private Button downloadButton;
 	@FXML private Button editButton;
 	@FXML private Button uploadButton;
+	private TreeItem<String> root;
 	private Desktop desktop = Desktop.getDesktop();
 	private List<String> currentPath;
+	private Path path;
 	private ObservableList<FileDetails> tableViewList;
 	private Model model;
-	private List<FileDetails> files;
 	private HashMap<HashKeys, String> connDetails;
 	
 	@Override
@@ -77,8 +75,11 @@ public class FTPController implements Initializable
 		this.accordian.getPanes();
 		this.accordian.setExpandedPane( connectionTitledPane );
 		consoleTextLabel.setEditable( false );
+		initTree();
 		initTable();
+		path = new Path();
 		currentPath = new ArrayList<String>();
+		
 	}
 
 	@FXML 
@@ -99,20 +100,14 @@ public class FTPController implements Initializable
 		if ( model != null )
 			model.logout();
 		Boolean remember = rememberDetails.isSelected();
-		accordian.setExpandedPane( fileViewerTitledPane );
 		wTc( "connecting" );
-		connDetails = new HashMap<HashKeys, String>();
-		connDetails.put( HashKeys.HOST, hostDetailsField.getText() );
-		connDetails.put( HashKeys.USERNAME, usernameField.getText() );
-		connDetails.put( HashKeys.PASSWORD, passwordField.getText() );
-		connDetails.put( HashKeys.PATH, directoryField.getText() );
-		connDetails.put( HashKeys.REMEMBER, remember.toString() );
-		currentPath.add( directoryField.getText() );
+		setConnectionDetails( remember );
+		path.setCurrent( directoryField.getText() );
 		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", connDetails.get( HashKeys.HOST ), connDetails.get( HashKeys.USERNAME ) ) );
 		wTc( model.connect( connDetails ) );
-		files = model.getFileList();
-		wTc( "populating file viewer" );
-		writeFilesToViewer();
+		wTc( "getting server contents" );
+		updateTableView( model.getFileList( getCurrentPath() ) );
+		setTreeRoot();
 		wTc( "done" );
 		accordian.setExpandedPane( fileViewerTitledPane );
 	}
@@ -127,7 +122,7 @@ public class FTPController implements Initializable
 	@FXML
 	public void handleRefresh( ActionEvent event )
 	{
-		
+		writeFilesToTree( getCurrentPath() );
 	}
 
 	@FXML
@@ -148,12 +143,6 @@ public class FTPController implements Initializable
 		
 	}
 
-	@FXML
-	public void handleTreeView( ActionEvent event )
-	{
-		System.out.println( "tree event" );
-	}
-	
 	public Model getModel()
 	{
 		if ( model == null )
@@ -174,6 +163,16 @@ public class FTPController implements Initializable
 		}
 	}
 
+	private void initTree()
+	{
+		this.treeView.getSelectionModel().setSelectionMode( SelectionMode.SINGLE );
+		this.treeView.getFocusModel();
+		this.treeView.addEventHandler( MouseEvent.MOUSE_CLICKED, ( MouseEvent event ) -> {
+			handleTreeView( event );
+		} );
+		root = new TreeItem<String>( "root" );
+	}
+
 	private void initTable()
 	{
 		fileSizeCol.setResizable( false );
@@ -186,21 +185,63 @@ public class FTPController implements Initializable
 				new PropertyValueFactory<FileDetails, String>( "size" ) );
 	}
 	
-	private void writeFilesToViewer()
+	private void setConnectionDetails( Boolean remember )
 	{
-		TreeItem<String> root = new TreeItem<String>( "Root" ); 
-		for ( FileDetails f : files )
-		{
-			if ( f.getType().equals( "directory" ) && !f.getName().startsWith( "." ) )
-			{
-				TreeItem<String> item = new TreeItem<String>( f.getName() );
-				root.getChildren().add( item );
-			}
-		}
-		tableViewList = FXCollections.observableArrayList( files );
-		tableView.setItems( tableViewList );
+		connDetails = new HashMap<HashKeys, String>();
+		connDetails.put( HashKeys.HOST, hostDetailsField.getText() );
+		connDetails.put( HashKeys.USERNAME, usernameField.getText() );
+		connDetails.put( HashKeys.PASSWORD, passwordField.getText() );
+		connDetails.put( HashKeys.PATH, directoryField.getText() );
+		connDetails.put( HashKeys.REMEMBER, remember.toString() );
+	}
+
+	private void setTreeRoot()
+	{
+		root.getChildren().addAll( writeFilesToTree( getCurrentPath() ) );
 		root.setExpanded( true );
 		treeView.setRoot( root );
 	}
 
+	private void handleTreeView( MouseEvent event )
+	{
+		System.out.println( "tree event: " + event.getEventType().getName() );
+		TreeItem<String> item = treeView.getSelectionModel().getSelectedItem();
+		System.out.println( item.getValue() );
+		if ( item.isLeaf() )
+		{
+			if ( model.changeDirectory( item.getValue() ) )
+			{
+				setCurretnPath( item.getValue() );
+				item.getChildren().addAll( model.getTreeItems( getCurrentPath() ) );
+			}
+		}
+		updateTableView( model.getFileList( getCurrentPath() ) );
+	}
+	
+	private void updateTableView( List<FileDetails> list )
+	{
+		tableViewList = FXCollections.observableArrayList( list );
+		tableView.setItems( tableViewList );
+	}
+
+	private List<TreeItem<String>> writeFilesToTree( String dir )
+	{
+		return model.getTreeItems( dir );
+	}
+	
+	private void setCurretnPath( String dir )
+	{
+		currentPath.add( dir );
+	}
+
+	private String getCurrentPath()
+	{
+		String path = "";
+		for ( String p : currentPath )
+		{
+			path = p.equals("/") ? p : String.format( "%s/%s", path, p );
+		}
+		return path;
+	}
+	
 }
