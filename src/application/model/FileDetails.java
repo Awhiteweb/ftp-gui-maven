@@ -15,7 +15,7 @@ public class FileDetails
 		this.name = name;
 		this.type = type;
 		this.size = size;
-		if ( type.equals( "directory" ) )
+		if ( type.equals( HashKeys.TYPE_DIR ) )
 			this.children = new ArrayList<FileDetails>();
 	}
 	

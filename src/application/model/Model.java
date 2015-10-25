@@ -29,6 +29,7 @@ import application.database.Connector;
 public class Model
 {	
 	private ObservableList<String> accounts;
+	private List<String> familyTree;
 	private HashMap<String, Account> loginDetails;
 	private static FTPClient ftp;
 	private static FTPClientConfig config;
@@ -176,7 +177,7 @@ public class Model
 	}
 
 	/**
-	 * gets a list of the files available
+	 * gets a list of the files available for the given directory
 	 * @return List<FileDetails>
 	 */
 	public List<FileDetails> getFileList( String dir )
@@ -253,13 +254,13 @@ public class Model
 		switch( type )
 		{
 		case 0:
-			return "file";
+			return HashKeys.TYPE_FILE.getName();
 		case 1:
-			return "directory";
+			return HashKeys.TYPE_DIR.getName();
 		case 2:
-			return "symbolic link";
+			return HashKeys.TYPE_SYMB.getName();
 		default:
-			return "unkown";
+			return HashKeys.TYPE_UNKN.getName();
 		}
 	}
 
@@ -316,30 +317,95 @@ public class Model
 		return (Stage) node.getScene().getWindow();
 	}
 
-	public List<TreeItem<String>> getTreeItems( String dir )
-	{
-		List<TreeItem<String>> root = new ArrayList<TreeItem<String>>(); 
 		
-		for ( FileDetails f : getFileList( dir ) )
-		{
-			TreeItem<String> child = addChild( f );
-			if ( child != null )
-			{					
-				root.add( child );
-			}
-		}
-		Collections.sort( root, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
-									t1.getValue().compareToIgnoreCase( t2.getValue() ) );
-		return root;
-	}
-	
-	private TreeItem<String> addChild( FileDetails f )
+	private List<TreeItem<String>> addChildren( Path child )
 	{
-		if ( f.getType().equals( "directory" ) && !f.getName().startsWith( "." ) )
-			return new TreeItem<String>( f.getName() );
-		else
-			return null;
+		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();
+		for ( String s : child.getFolders() )
+		{
+			TreeItem<String> item = new TreeItem<String>( s );
+			if ( child.getChild( s ) != null )
+				item.getChildren().addAll( addChildren( child.getChild( s ) ) );
+			list.add( item );
+		}
+		Collections.sort( list, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
+							t1.getValue().compareToIgnoreCase( t2.getValue() ) );
+		return list;
+	}
+
+	public List<TreeItem<String>> writeTree( Path pathRoot ) 
+	{
+		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();
+		for ( String s : pathRoot.getFolders() )
+		{
+			TreeItem<String> item = new TreeItem<String>( s );
+			if ( pathRoot.getChild( s ) != null )
+				item.getChildren().addAll( addChildren( pathRoot.getChild( s ) ) );
+			list.add( item );
+		}
+		Collections.sort( list, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
+							t1.getValue().compareToIgnoreCase( t2.getValue() ) );
+		return list;
+	}
+
+	public TreeItem<String> getTreeItems(Path pathRoot) 
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private void listChildren( String root, TreeItem<String> child )
+	{
+		familyTree.add( child.getValue() );
+		if ( child.getValue().equals( root ) )
+			return;
+		listChildren( root, child.getParent() );
 	}
 	
+	private Path getPathObject( Path root, String name )
+	{
+		if ( root.getChild( name ) != null )
+			return root.getChild( name );
+		String dir = "";
+		for ( String s : familyTree )
+		{
+			dir = s + "/" + dir;
+		}
+		List<FileDetails> list = getFileList( dir );
+		Path item = new Path();
+		item.setName( name );
+		item.setParent( root.getName() );
+		item.setContents( list );
+		return item;
+	}
+	
+	public Path findFamily( TreeItem<String> item, Path pathRoot ) 
+	{
+		Path returnItem = pathRoot;
+		familyTree = new ArrayList<String>();
+		listChildren( pathRoot.getName(), item );
+		if ( item.getValue().equals( pathRoot.getName() ) )
+			return pathRoot;
+		if ( item.getParent().getValue().equals( pathRoot.getName() ) )
+			return getPathObject( pathRoot, item.getValue() );
+		for ( int i = familyTree.size() - 2; i == 0; i-- )
+		{
+			if ( i == 0 )
+				returnItem = getPathObject( returnItem, familyTree.get( i ) );
+			else
+				returnItem = returnItem.getChild( familyTree.get( i ) );
+		}
+		return returnItem;
+	}
+	
+	public List<TreeItem<String>> addLeaves( List<String> list )
+	{
+		List<TreeItem<String>> branches = new ArrayList<TreeItem<String>>();
+		for ( String s : list )
+			branches.add( new TreeItem<String>( s ) );
+		Collections.sort( branches, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
+							t1.getValue().compareToIgnoreCase( t2.getValue() ) );
+		return branches;
+	}
 
 }

@@ -3,11 +3,15 @@ package application.controller;
 import java.awt.Desktop;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import application.model.Account;
+import application.model.FileDetails;
+import application.model.HashKeys;
+import application.model.Model;
+import application.model.Path;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -30,11 +34,6 @@ import javafx.scene.control.TreeView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Ellipse;
-import application.model.Account;
-import application.model.FileDetails;
-import application.model.HashKeys;
-import application.model.Model;
-import application.model.Path;
 
 public class FTPController implements Initializable
 {
@@ -63,7 +62,7 @@ public class FTPController implements Initializable
 	private TreeItem<String> root;
 	private Desktop desktop = Desktop.getDesktop();
 	private List<String> currentPath;
-	private Path path;
+	private Path pathRoot;
 	private ObservableList<FileDetails> tableViewList;
 	private Model model;
 	private HashMap<HashKeys, String> connDetails;
@@ -77,7 +76,7 @@ public class FTPController implements Initializable
 		consoleTextLabel.setEditable( false );
 		initTree();
 		initTable();
-		path = new Path();
+		pathRoot = new Path();
 		currentPath = new ArrayList<String>();
 		
 	}
@@ -94,19 +93,19 @@ public class FTPController implements Initializable
 	
 	@FXML 
 	public void handleLoginButton( ActionEvent event ) 
-	{
-		boolean remember = rememberDetails.isSelected();
-		
+	{		
 		if ( model != null )
 			model.logout();
 		Boolean remember = rememberDetails.isSelected();
 		wTc( "connecting" );
 		setConnectionDetails( remember );
-		path.setCurrent( directoryField.getText() );
+		pathRoot.setName( directoryField.getText() );
+		pathRoot.setParent( null );
 		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", connDetails.get( HashKeys.HOST ), connDetails.get( HashKeys.USERNAME ) ) );
 		wTc( model.connect( connDetails ) );
 		wTc( "getting server contents" );
-		updateTableView( model.getFileList( getCurrentPath() ) );
+		pathRoot.setContents( model.getFileList( getCurrentPath() ) );
+		updateTableView( pathRoot.getFiles() );
 		setTreeRoot();
 		wTc( "done" );
 		accordian.setExpandedPane( fileViewerTitledPane );
@@ -122,7 +121,7 @@ public class FTPController implements Initializable
 	@FXML
 	public void handleRefresh( ActionEvent event )
 	{
-		writeFilesToTree( getCurrentPath() );
+		writeTree();
 	}
 
 	@FXML
@@ -197,7 +196,7 @@ public class FTPController implements Initializable
 
 	private void setTreeRoot()
 	{
-		root.getChildren().addAll( writeFilesToTree( getCurrentPath() ) );
+		root.getChildren().addAll( writeTree() );
 		root.setExpanded( true );
 		treeView.setRoot( root );
 	}
@@ -212,7 +211,8 @@ public class FTPController implements Initializable
 			if ( model.changeDirectory( item.getValue() ) )
 			{
 				setCurretnPath( item.getValue() );
-				item.getChildren().addAll( model.getTreeItems( getCurrentPath() ) );
+				Path child = model.findFamily( item, pathRoot );
+				item.getChildren().addAll( model.addLeaves( child.getFolders() ) );
 			}
 		}
 		updateTableView( model.getFileList( getCurrentPath() ) );
@@ -224,9 +224,9 @@ public class FTPController implements Initializable
 		tableView.setItems( tableViewList );
 	}
 
-	private List<TreeItem<String>> writeFilesToTree( String dir )
+	private List<TreeItem<String>> writeTree()
 	{
-		return model.getTreeItems( dir );
+		return model.writeTree( pathRoot );
 	}
 	
 	private void setCurretnPath( String dir )
