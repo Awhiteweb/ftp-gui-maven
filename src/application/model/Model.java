@@ -407,5 +407,25 @@ public class Model
 							t1.getValue().compareToIgnoreCase( t2.getValue() ) );
 		return branches;
 	}
+	
+	public String getCurrentDirectory( TreeItem<String> item, String root )
+	{
+		String path = "";
+		boolean end = false;
+		while ( !end )
+		{
+			if ( item.getValue().equalsIgnoreCase( "root" ) )
+			{
+				path = root + path;
+				end = true;
+			}
+			else
+			{
+				path = "/" + item.getValue() + path;
+				item = item.getParent();
+			}
+		}
+		return path;
+	}
 
 }

@@ -85,8 +85,9 @@ public class Path
 		files = new ArrayList<FileDetails>();
 		for ( FileDetails f : contents )
 		{
-			if ( f.getType().equals( HashKeys.TYPE_DIR ) )
-				folders.add( f.getName() );
+			if ( f.getType().equals( HashKeys.TYPE_DIR.getName() ) )
+				if ( !f.getName().equals(".") && !f.getName().equals( ".." ) )
+					folders.add( f.getName() );
 			else
 				files.add( f );
 		}
