@@ -1,8 +1,11 @@
-package application.model;
+package application.model.data;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import application.model.FileDetails;
+import application.model.HashKeys;
 
 public class Path
 {

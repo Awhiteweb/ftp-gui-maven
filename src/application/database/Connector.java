@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import application.model.Account;
 import application.model.HashKeys;
+import application.model.data.Account;
 
 public class Connector
 {

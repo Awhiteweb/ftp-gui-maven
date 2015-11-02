@@ -23,8 +23,12 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
+import org.apache.derby.impl.sql.catalog.SYSROUTINEPERMSRowFactory;
 
 import application.database.Connector;
+import application.model.data.Account;
+import application.model.data.Directory;
+import application.model.data.Path;
 
 public class Model
 {	
@@ -36,6 +40,7 @@ public class Model
 	private int ftpReplyCode;
 	private FTPFile[] ftpFileArray;
 	private Connector conn;
+	private Directory directory;
 	
 	/**
 	 * sets up model 
@@ -51,6 +56,7 @@ public class Model
 		accounts = FXCollections.observableArrayList();
 		loginDetails = new HashMap<String, Account>();
 		conn = new Connector();
+		directory = new Directory();
 		List<Account> accs = conn.getAccounts();
 		for ( Account acc : accs )
 		{
@@ -182,6 +188,9 @@ public class Model
 	 */
 	public List<FileDetails> getFileList( String dir )
 	{
+		if ( directory.getDirectory( dir ) != null )
+			return directory.getDirectory( dir ).getContents();
+		
 		changeDirectory( dir );
 		List<FileDetails> files = new ArrayList<FileDetails>();
 		try
@@ -333,14 +342,20 @@ public class Model
 		return list;
 	}
 
-	public List<TreeItem<String>> writeTree( Path pathRoot ) 
+	public List<TreeItem<String>> writeTree() 
 	{
+		/* 
+		 * TODO: get directories and return full tree from memory listing, delete new Path()
+		 * extract branch loop to new method to call within map keyset loop
+		 * keyset needs to find root node and build tree from it with root only expanded
+		 */
+		Path path = new Path();
 		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();
-		for ( String s : pathRoot.getFolders() )
+		for ( String s : path.getFolders() )
 		{
 			TreeItem<String> item = new TreeItem<String>( s );
-			if ( pathRoot.getChild( s ) != null )
-				item.getChildren().addAll( addChildren( pathRoot.getChild( s ) ) );
+			if ( path.getChild( s ) != null )
+				item.getChildren().addAll( addChildren( path.getChild( s ) ) );
 			list.add( item );
 		}
 		Collections.sort( list, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
@@ -408,7 +423,7 @@ public class Model
 		return branches;
 	}
 	
-	public String getCurrentDirectory( TreeItem<String> item, String root )
+	public String getCurrentDirectoryString( TreeItem<String> item, String root )
 	{
 		String path = "";
 		boolean end = false;
@@ -426,6 +441,20 @@ public class Model
 			}
 		}
 		return path;
+	}
+	
+	public void startDirectory( String path, String name, String parent )
+	{
+		Path p = new Path();
+		p.setName( name );
+		p.setParent( parent );
+		p.setContents( getFileList( path ) );
+		addDirectory( path, p );
+	}
+	
+	public void addDirectory( String dir, Path path )
+	{
+		directory.addDirectory( dir, path );
 	}
 
 }

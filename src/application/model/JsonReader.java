@@ -6,6 +6,8 @@ import java.io.IOException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import application.model.data.Accounts;
+
 public class JsonReader
 {
 	private File data = new File( "resources/accounts.json" );
