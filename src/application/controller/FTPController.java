@@ -2,7 +2,6 @@ package application.controller;
 
 import java.awt.Desktop;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -99,10 +98,10 @@ public class FTPController implements Initializable
 		setConnectionDetails( remember );
 		currentPath += directoryField.getText();
 		rootPath = currentPath;
-		model.startDirectory( currentPath, directoryField.getText(), "root" );
 		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", connDetails.get( HashKeys.HOST ), connDetails.get( HashKeys.USERNAME ) ) );
 		wTc( model.connect( connDetails ) );
 		wTc( "getting server contents" );
+		model.startDirectory( currentPath, directoryField.getText(), "root" );
 		updateTableView( model.getFileList( currentPath ) );
 		setTreeRoot();
 		wTc( "done" );
@@ -125,19 +124,23 @@ public class FTPController implements Initializable
 	@FXML
 	public void handleDownload( ActionEvent event )
 	{
-		model.openFileChooser( event, desktop, true );
+		String fileName = tableView.getSelectionModel().getSelectedItem().getName();
+		String result = model.downloadFileChooser( event, fileName, currentPath );
+		wTc( result );
 	}
 	
 	@FXML
 	public void handleUpload( ActionEvent event )
 	{
-		model.openFileChooser( event, desktop, false );
+		String result = model.uploadFileChooser( event, currentPath );
+		wTc( result );
 	}
 	
 	@FXML
 	public void handleEdit( ActionEvent event )
 	{
-		
+		String fileName = tableView.getSelectionModel().getSelectedItem().getName();
+		String result = model.editServerFile( event, fileName, currentPath, desktop );		
 	}
 
 	public Model getModel()
@@ -147,7 +150,7 @@ public class FTPController implements Initializable
 		return model;
 	}
 
-	public void wTc( String update )
+	private void wTc( String update )
 	{
 		if ( consoleTextLabel.getText() == null || 
 				consoleTextLabel.getText().equals( "" ) )
@@ -176,7 +179,7 @@ public class FTPController implements Initializable
 		fileTypeCol.setResizable( false );
 		fileNameCol.setCellValueFactory( 
 				new PropertyValueFactory<FileDetails, String>( "name" ) );
-		fileSizeCol.setCellValueFactory( 
+		fileTypeCol.setCellValueFactory( 
 				new PropertyValueFactory<FileDetails, String>( "type" ) );
 		fileSizeCol.setCellValueFactory( 
 				new PropertyValueFactory<FileDetails, String>( "size" ) );
@@ -209,16 +212,19 @@ public class FTPController implements Initializable
 		{
 			if ( model.changeDirectory( currentPath ) )
 			{
-				Path p = new Path();
-				p.setName( item.getValue() );
-				p.setParent( item.getParent().getValue() );
-				p.setContents( model.getFileList( currentPath ) );
-				model.addDirectory( currentPath, p );
-//				pathMap.put( currentPath, p );
-//				Path child = model.findFamily( item, pathRoot );
-				item.getChildren().addAll( model.addLeaves( p.getFolders() ) );
+				item.getChildren().addAll( model.addLeaves( item, currentPath ) );
 				if ( !item.isExpanded() )
 					item.setExpanded( true );
+			}
+			else
+			{
+				model.connect( connDetails );
+				if ( model.changeDirectory( currentPath ) )
+				{
+					item.getChildren().addAll( model.addLeaves( item, currentPath ) );
+					if ( !item.isExpanded() )
+						item.setExpanded( true );
+				}
 			}
 		}		
 		updateTableView( model.getFileList( currentPath ) );
@@ -232,7 +238,7 @@ public class FTPController implements Initializable
 
 	private List<TreeItem<String>> writeTree()
 	{
-		return model.writeTree();
+		return model.writeTree( rootPath );
 	}
 	
 }

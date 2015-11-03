@@ -15,6 +15,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.scene.control.TreeItem;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -23,7 +24,6 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
-import org.apache.derby.impl.sql.catalog.SYSROUTINEPERMSRowFactory;
 
 import application.database.Connector;
 import application.model.data.Account;
@@ -171,7 +171,7 @@ public class Model
 			ftpFileArray = ftp.listFiles();
 			for ( FTPFile file : ftpFileArray )
 			{
-				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
+//				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
 				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
 			}
 		}
@@ -189,7 +189,7 @@ public class Model
 	public List<FileDetails> getFileList( String dir )
 	{
 		if ( directory.getDirectory( dir ) != null )
-			return directory.getDirectory( dir ).getContents();
+			return directory.getDirectory( dir ).getFiles();
 		
 		changeDirectory( dir );
 		List<FileDetails> files = new ArrayList<FileDetails>();
@@ -198,7 +198,6 @@ public class Model
 			ftpFileArray = ftp.listFiles();
 			for ( FTPFile file : ftpFileArray )
 			{
-				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
 				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
 			}
 		}
@@ -210,39 +209,99 @@ public class Model
 	}
 
 	/**
-	 * opens a file explorer window
-	 * @param event
-	 * @param desktop
-	 * @param direction: <ul><li><strong>true</strong> to download or </li>
-	 * 					 <li><strong>false</strong> to upload</li></ul>
+	 * gets a list of the folders and files available for the given directory
+	 * @return List<FileDetails>
 	 */
-	public void openFileChooser( ActionEvent event, Desktop desktop, boolean direction )
+	public List<FileDetails> getContents( String dir )
 	{
-		FileChooser fileChooser = new FileChooser();
-		if ( direction )
+		if ( directory.getDirectory( dir ) != null )
+			return directory.getDirectory( dir ).getContents();
+		
+		changeDirectory( dir );
+		List<FileDetails> files = new ArrayList<FileDetails>();
+		try
 		{
-			fileChooser.setTitle( "download file to..." );
-			fileChooser.setInitialFileName( "file.txt" );
-			File file = fileChooser.showOpenDialog( getStage( event ) );
-			if ( file != null ) {
-				save( file );
+			ftpFileArray = ftp.listFiles();
+			for ( FTPFile file : ftpFileArray )
+			{
+//				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
+				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
 			}
 		}
-		else
+		catch (IOException e)
 		{
-			fileChooser.setTitle( "File(s) to upload" );
-			List<File> list = fileChooser.showOpenMultipleDialog( getStage( event ) );
-			if ( list != null ) {
-	            for ( File file : list ) {
-	                openFile( file, desktop );
-	            }
-	        }
+			e.printStackTrace();
 		}
+		return files;
+	}
+
+	/**
+	 * opens a file explorer window to download a file
+	 * @param event - ActionEvent
+	 * @param fileName - String
+	 */
+	public String downloadFileChooser( ActionEvent event, String fileName, String serverPath )
+	{
+		DirectoryChooser directoryChooser = new DirectoryChooser();
+		directoryChooser.setTitle( "download file to..." );
+		File file = directoryChooser.showDialog( getStage( event ) );
+		if ( file != null ) 
+		{
+			String localFile = file.getAbsolutePath();
+			String serverFile = String.format( "%s/%s", serverPath, fileName );
+			if ( localFile.contains( "\\" ) )
+				localFile += "\\" + fileName;
+			else if ( localFile.contains( "/" ) )
+				localFile += "/" + fileName;
+			return download( localFile, serverFile );
+		}
+		return "directoryChooser error";
 	}
 	
-	private void save( File file )
+	
+	/**
+	 * opens a file explorer window to upload a file
+	 * @param event - ActionEvent
+	 * @param desktop - Desktop
+	 */
+	public String uploadFileChooser( ActionEvent event, String serverPath )
 	{
-		// TODO: download files from server
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle( "File(s) to upload" );
+		List<File> list = fileChooser.showOpenMultipleDialog( getStage( event ) );
+		if ( list != null ) {
+            for ( File file : list ) {
+                upload( file, serverPath  );
+            }
+        }
+		return null;
+	}
+	
+	/**
+	 * opens the selected file in the desktop default editor for 
+	 * the selected file type
+	 * @param event - ActionEvent
+	 * @param desktop - Desktop
+	 */
+	public String editServerFile( ActionEvent event, String fileName, String serverPath, Desktop desktop )
+	{
+		String serverFile = String.format( "%s/%s", serverPath, fileName );
+		String localFile = "temp local file";
+		String suffix = fileName.substring( fileName.indexOf( "." ) + 1, fileName.length() );
+		String prefix = fileName.substring( 0, fileName.indexOf( "." ) );
+		try
+		{
+			File temp = File.createTempFile( prefix, suffix );
+			download( temp.getAbsolutePath(), serverFile );
+		}
+		catch ( IOException e )
+		{
+			e.printStackTrace();
+		}
+		download( localFile, serverFile );
+		File file = new File( localFile );
+		openFile( file, desktop );
+		return null;
 	}
 
 	private void openFile( File file, Desktop desktop  ) 
@@ -287,37 +346,38 @@ public class Model
 			System.out.println( "account added" );
 	}
 
-	private void download( String dir, String file )
+	private String download( String localFile, String serverFile )
 	{
-		String dl = dir + "/" + file;
-		try ( FileOutputStream fs1 = new FileOutputStream( new File("./src/main/resources/" + file ) ) )
+		try ( FileOutputStream fs1 = new FileOutputStream( new File( localFile ) ) )
 		{
-			if ( ftp.retrieveFile( dl, fs1 ) )
-				System.out.println( dl + " downloaded" );
+			if ( ftp.retrieveFile( serverFile, fs1 ) )
+				return String.format( "Downloaded to %s", localFile );
 		}
 		catch( IOException ioe )
 		{
-			System.err.println( "download error" );
 			ioe.printStackTrace();
 		}
+		return "download error";
 	}
 	
-	private void upload( String dir, String file )
+	private String upload( File localFile, String serverFile )
 	{
-		String ul = dir + "/" + file;
-		try (FileInputStream fis = new FileInputStream( new File("./src/main/resources/" + file ) ) )
-		{
-			ftp.setFileType( FTP.BINARY_FILE_TYPE );
-			ftp.setFileTransferMode( FTP.BINARY_FILE_TYPE );
-			
-			if ( ftp.storeFile( ul, fis ) )
-				System.out.println( "file uploaded" );			
-		}
-		catch ( IOException ioe )
-		{
-			System.err.println( "upload error" );
-			ioe.printStackTrace();
-		}
+		System.out.println( localFile.getAbsolutePath() );
+		System.out.println( localFile.getName() );
+		System.out.println( serverFile );
+//		try ( FileInputStream fis = new FileInputStream( localFile ) )
+//		{
+//			ftp.setFileType( FTP.BINARY_FILE_TYPE );
+//			ftp.setFileTransferMode( FTP.BINARY_FILE_TYPE );
+//			
+//			if ( ftp.storeFile( serverFile, fis ) )
+//				return String.format( "%s uploaded", serverFile );			
+//		}
+//		catch ( IOException ioe )
+//		{
+//			ioe.printStackTrace();
+//		}
+		return "upload error";
 	}
 	
 	private Stage getStage( ActionEvent event )
@@ -327,46 +387,44 @@ public class Model
 	}
 
 		
-	private List<TreeItem<String>> addChildren( Path child )
+	public List<TreeItem<String>> writeTree( String path ) 
+	{
+		/* 
+		 * TODO: get directories and return full tree from memory listing
+		 */
+		Path root = directory.getDirectory( path );
+		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();
+		for ( String s : root.getFolders() )
+		{
+			TreeItem<String> item = new TreeItem<String>( s );
+			String newPath = path + "/" + s;
+			if ( directory.getDirectory( newPath ) != null )
+				item.getChildren().addAll( addChildren( newPath ) );
+			list.add( item );
+		}
+		return sortTreeList( list );
+	}
+
+	private List<TreeItem<String>> addChildren( String path )
 	{
 		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();
+		Path child = directory.getDirectory( path );
 		for ( String s : child.getFolders() )
 		{
 			TreeItem<String> item = new TreeItem<String>( s );
-			if ( child.getChild( s ) != null )
-				item.getChildren().addAll( addChildren( child.getChild( s ) ) );
+			String newPath = path + "/" + s;
+			if ( directory.getDirectory( newPath ) != null )
+				item.getChildren().addAll( addChildren( newPath ) );
 			list.add( item );
 		}
+		return sortTreeList( list );
+	}
+
+	private List<TreeItem<String>> sortTreeList( List<TreeItem<String>> list )
+	{
 		Collections.sort( list, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
 							t1.getValue().compareToIgnoreCase( t2.getValue() ) );
 		return list;
-	}
-
-	public List<TreeItem<String>> writeTree() 
-	{
-		/* 
-		 * TODO: get directories and return full tree from memory listing, delete new Path()
-		 * extract branch loop to new method to call within map keyset loop
-		 * keyset needs to find root node and build tree from it with root only expanded
-		 */
-		Path path = new Path();
-		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();
-		for ( String s : path.getFolders() )
-		{
-			TreeItem<String> item = new TreeItem<String>( s );
-			if ( path.getChild( s ) != null )
-				item.getChildren().addAll( addChildren( path.getChild( s ) ) );
-			list.add( item );
-		}
-		Collections.sort( list, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
-							t1.getValue().compareToIgnoreCase( t2.getValue() ) );
-		return list;
-	}
-
-	public TreeItem<String> getTreeItems(Path pathRoot) 
-	{
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	private void listChildren( String root, TreeItem<String> child )
@@ -377,49 +435,54 @@ public class Model
 		listChildren( root, child.getParent() );
 	}
 	
-	private Path getPathObject( Path root, String name )
-	{
-		if ( root.getChild( name ) != null )
-			return root.getChild( name );
-		String dir = "";
-		for ( String s : familyTree )
-		{
-			dir = s + "/" + dir;
-		}
-		List<FileDetails> list = getFileList( dir );
-		Path item = new Path();
-		item.setName( name );
-		item.setParent( root.getName() );
-		item.setContents( list );
-		return item;
-	}
+//	private Path getPathObject( Path root, String name )
+//	{
+//		if ( root.getChild( name ) != null )
+//			return root.getChild( name );
+//		String dir = "";
+//		for ( String s : familyTree )
+//		{
+//			dir = s + "/" + dir;
+//		}
+//		List<FileDetails> list = getContents( dir );
+//		Path item = new Path();
+//		item.setName( name );
+//		item.setParent( root.getName() );
+//		item.setContents( list );
+//		return item;
+//	}
+//	
+//	public Path findFamily( TreeItem<String> item, Path pathRoot ) 
+//	{
+//		Path returnItem = pathRoot;
+//		familyTree = new ArrayList<String>();
+//		listChildren( pathRoot.getName(), item );
+//		if ( item.getValue().equals( pathRoot.getName() ) )
+//			return pathRoot;
+//		if ( item.getParent().getValue().equals( pathRoot.getName() ) )
+//			return getPathObject( pathRoot, item.getValue() );
+//		for ( int i = familyTree.size() - 2; i == 0; i-- )
+//		{
+//			if ( i == 0 )
+//				returnItem = getPathObject( returnItem, familyTree.get( i ) );
+//			else
+//				returnItem = returnItem.getChild( familyTree.get( i ) );
+//		}
+//		return returnItem;
+//	}
 	
-	public Path findFamily( TreeItem<String> item, Path pathRoot ) 
+	public List<TreeItem<String>> addLeaves( TreeItem<String> item, String currentPath )
 	{
-		Path returnItem = pathRoot;
-		familyTree = new ArrayList<String>();
-		listChildren( pathRoot.getName(), item );
-		if ( item.getValue().equals( pathRoot.getName() ) )
-			return pathRoot;
-		if ( item.getParent().getValue().equals( pathRoot.getName() ) )
-			return getPathObject( pathRoot, item.getValue() );
-		for ( int i = familyTree.size() - 2; i == 0; i-- )
-		{
-			if ( i == 0 )
-				returnItem = getPathObject( returnItem, familyTree.get( i ) );
-			else
-				returnItem = returnItem.getChild( familyTree.get( i ) );
-		}
-		return returnItem;
-	}
-	
-	public List<TreeItem<String>> addLeaves( List<String> list )
-	{
+		Path p = new Path();
+		p.setName( item.getValue() );
+		p.setParent( item.getParent().getValue() );
+		p.setContents( getContents( currentPath ) );
+		addDirectory( currentPath, p );
+
 		List<TreeItem<String>> branches = new ArrayList<TreeItem<String>>();
-		for ( String s : list )
+		for ( String s : p.getFolders() )
 			branches.add( new TreeItem<String>( s ) );
-		Collections.sort( branches, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
-							t1.getValue().compareToIgnoreCase( t2.getValue() ) );
+		sortTreeList( branches );
 		return branches;
 	}
 	
@@ -448,7 +511,7 @@ public class Model
 		Path p = new Path();
 		p.setName( name );
 		p.setParent( parent );
-		p.setContents( getFileList( path ) );
+		p.setContents( getContents( path ) );
 		addDirectory( path, p );
 	}
 	

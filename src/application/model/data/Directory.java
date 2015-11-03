@@ -1,6 +1,11 @@
 package application.model.data;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+
+import javafx.scene.control.TreeItem;
 
 public class Directory {
 
@@ -20,4 +25,32 @@ public class Directory {
 	{
 		directory.put( dir, path );
 	}
+	
+	public Set<String> getKeySet()
+	{
+		return directory.keySet();
+	}
+	
+	public List<TreeItem<String>> getTreeList()
+	{
+		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();
+		
+		Set<String> set = getKeySet();
+		for ( String s : set )
+		{
+			String[] path = splitPath( s );
+			if ( path[0].equals( "" ) )
+			{
+				
+			}
+		}
+		
+		return list;
+	}
+	
+	private String[] splitPath( String path )
+	{
+		return path.split( "/" );
+	}
+	
 }

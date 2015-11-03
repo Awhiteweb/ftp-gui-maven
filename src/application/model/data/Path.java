@@ -9,22 +9,12 @@ import application.model.HashKeys;
 
 public class Path
 {
-	/*
-	 Object needs to be able to represent a tree to remember parents and children
-	 either probably a Set of ArrayLists which store hashmaps of folders and files
-	 */
-	private HashMap<String,Path> children;
 	private List<FileDetails> contents;
 	private String name;
 	private String parent;
 	private List<String> folders;
 	private List<FileDetails> files;
 	
-	public Path()
-	{
-		children = new HashMap<String,Path>();
-	}
-
 	public void setName( String name )
 	{
 		this.name = name;
@@ -47,11 +37,6 @@ public class Path
 		splitContents();
 	}
 	
-	public void addChild( String name, Path contents )
-	{
-		this.children.put( name, contents );
-	}
-
 	public String getName()
 	{
 		return name;
@@ -77,11 +62,6 @@ public class Path
 		return files;
 	}
 	
-	public Path getChild( String name )
-	{
-		return children.get( name );
-	}
-	
 	private void splitContents()
 	{
 		folders = new ArrayList<String>();
@@ -89,10 +69,16 @@ public class Path
 		for ( FileDetails f : contents )
 		{
 			if ( f.getType().equals( HashKeys.TYPE_DIR.getName() ) )
+			{
 				if ( !f.getName().equals(".") && !f.getName().equals( ".." ) )
+				{
 					folders.add( f.getName() );
+				}
+			}
 			else
+			{
 				files.add( f );
+			}
 		}
 	}
 	
