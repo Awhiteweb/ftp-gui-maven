@@ -2,14 +2,22 @@ package application.model;
 
 import java.awt.Desktop;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPClientConfig;
+import org.apache.commons.net.ftp.FTPFile;
+import org.apache.commons.net.ftp.FTPReply;
+
+import application.database.service.AccountService;
+import application.database.service.DataService;
+import application.model.data.Account;
+import application.model.data.DirFile;
+import application.model.data.Path;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -18,56 +26,36 @@ import javafx.scene.control.TreeItem;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
-import org.apache.commons.net.ftp.FTP;
-import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPClientConfig;
-import org.apache.commons.net.ftp.FTPFile;
-import org.apache.commons.net.ftp.FTPReply;
-import org.apache.derby.impl.sql.catalog.SYSROUTINEPERMSRowFactory;
-
-//import application.database.Connector;
-import application.database.service.DataService;
-import application.model.data.Account;
-import application.model.data.DirFile;
-import application.model.data.Directory;
-import application.model.data.Path;
-
-public class Model
+public class ModelJPA
 {	
-	
-	DataService service;
+	private DataService dataService;
+	private AccountService accountService;
 	
 	private ObservableList<String> accounts;
 	private List<String> familyTree;
-	private HashMap<String, Account> loginDetails;
 	private static FTPClient ftp;
 	private static FTPClientConfig config;
 	private int ftpReplyCode;
 	private FTPFile[] ftpFileArray;
-//	private Connector conn;
-	private Directory directory;
 	
 	/**
 	 * sets up model 
-	 * initialises observable list of accounts
-	 * initialises hashmap for login accounts
-	 * initialises database connector
+	 * Initialises observable list of accounts
+	 * Initialises account service
+	 * Initialises database service
 	 * retrieves existing accounts from database
 	 * adds the account host names to the observable list
-	 * adds the accounts to the hashmap
 	 */
-	public Model()
+	public ModelJPA()
 	{
+		dataService = new DataService();
 		accounts = FXCollections.observableArrayList();
-		loginDetails = new HashMap<String, Account>();
-//		conn = new Connector();
-		directory = new Directory();
-//		List<Account> accs = conn.getAccounts();
-//		for ( Account acc : accs )
-//		{
-//			accounts.add( acc.getAccount() );
-//			loginDetails.put( acc.getAccount(), acc );
-//		}
+		accountService = new AccountService();
+		List<Account> accs = accountService.findAll();
+		for ( Account acc : accs )
+		{
+			accounts.add( acc.getAccount() );
+		}
 	}
 	
 	/**
@@ -86,7 +74,7 @@ public class Model
 	 */
 	public Account getLoginDetails( String account )
 	{
-		return loginDetails.get( account );
+		return accountService.findByName( account );
 	}
 	
 	/**
@@ -95,15 +83,13 @@ public class Model
 	 * @return string message for apps console log
 	 */
 	public String connect( HashMap<HashKeys, String> connDetails )
-	{
-		if ( directory == null )
-			return "Using test data";  
+	{ 
 		if ( ftp == null )
 			configure();
 		try
 		{
 			if ( connDetails.get( HashKeys.REMEMBER ).equals( "true" ) )
-				addHost( connDetails );
+				addAccount( connDetails );
 			ftp.connect( connDetails.get( HashKeys.HOST ) );
 			ftp.login( connDetails.get( HashKeys.USERNAME ), 
 					   connDetails.get( HashKeys.PASSWORD ) );
@@ -122,6 +108,25 @@ public class Model
 		{
 			return e.getMessage();
 		}
+	}
+
+	private void addAccount( HashMap<HashKeys, String> connDetails )
+	{
+		accountService.saveOrPersist( 
+				new Account( 
+						connDetails.get( HashKeys.HOST ), 
+						connDetails.get( HashKeys.USERNAME ), 
+						connDetails.get( HashKeys.PASSWORD ), 
+						connDetails.get( HashKeys.PATH ) 
+						) 
+				);
+	}
+
+	private void configure()
+	{
+		ftp = new FTPClient();
+		config = new FTPClientConfig();
+		ftp.configure( config );
 	}
 	
 	/**
@@ -195,35 +200,32 @@ public class Model
 	 */
 	public List<FileDetails> getFileList( String dir )
 	{
-		if ( directory == null )
-		{
-			service.resetTestData();
-			List<DirFile> files = service.findAll();
-			List<FileDetails> fds = new ArrayList<FileDetails>();
-			for ( DirFile file : files )
-				fds.add( new FileDetails( file.getName(), "file", 5 ) );
-			return fds;
-		}
+		dataService.resetTestData();
+		List<DirFile> files = dataService.findAll();
+		List<FileDetails> fds = new ArrayList<FileDetails>();
+		for ( DirFile file : files )
+			fds.add( new FileDetails( file.getName(), "file", 5 ) );
+		return fds;
 		
-		if ( directory.getDirectory( dir ) != null )
-			return directory.getDirectory( dir ).getContents();
+//		if ( directory.getDirectory( dir ) != null )
+//			return directory.getDirectory( dir ).getContents();
 		
-		changeDirectory( dir );
-		List<FileDetails> files = new ArrayList<FileDetails>();
-		try
-		{
-			ftpFileArray = ftp.listFiles();
-			for ( FTPFile file : ftpFileArray )
-			{
-				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
-				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
-			}
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-		return files;
+//		changeDirectory( dir );
+//		List<FileDetails> files = new ArrayList<FileDetails>();
+//		try
+//		{
+//			ftpFileArray = ftp.listFiles();
+//			for ( FTPFile file : ftpFileArray )
+//			{
+//				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
+//				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
+//			}
+//		}
+//		catch (IOException e)
+//		{
+//			e.printStackTrace();
+//		}
+//		return files;
 	}
 
 	/**
@@ -290,97 +292,55 @@ public class Model
 		}
 	}
 
-	private void configure()
-	{
-		ftp = new FTPClient();
-		config = new FTPClientConfig();
-		ftp.configure( config );
-	}
-	
-	private void addHost( HashMap<HashKeys, String> connDetails )
-	{
-//		conn = new Connector();
-//		if ( conn.addAccount( connDetails ) )
-//			System.out.println( "account added" );
-	}
-
-	private void download( String dir, String file )
-	{
-		String dl = dir + "/" + file;
-		try ( FileOutputStream fs1 = new FileOutputStream( new File("./src/main/resources/" + file ) ) )
-		{
-			if ( ftp.retrieveFile( dl, fs1 ) )
-				System.out.println( dl + " downloaded" );
-		}
-		catch( IOException ioe )
-		{
-			System.err.println( "download error" );
-			ioe.printStackTrace();
-		}
-	}
-	
-	private void upload( String dir, String file )
-	{
-		String ul = dir + "/" + file;
-		try (FileInputStream fis = new FileInputStream( new File("./src/main/resources/" + file ) ) )
-		{
-			ftp.setFileType( FTP.BINARY_FILE_TYPE );
-			ftp.setFileTransferMode( FTP.BINARY_FILE_TYPE );
-			
-			if ( ftp.storeFile( ul, fis ) )
-				System.out.println( "file uploaded" );			
-		}
-		catch ( IOException ioe )
-		{
-			System.err.println( "upload error" );
-			ioe.printStackTrace();
-		}
-	}
-	
 	private Stage getStage( ActionEvent event )
 	{
 		Node node = (Node) event.getSource();
 		return (Stage) node.getScene().getWindow();
 	}
 
-		
-	private List<TreeItem<String>> addChildren( Path child )
-	{
-		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();
-		for ( String s : child.getFolders() )
-		{
-			TreeItem<String> item = new TreeItem<String>( s );
-			if ( child.getChild( s ) != null )
-				item.getChildren().addAll( addChildren( child.getChild( s ) ) );
-			list.add( item );
-		}
-		Collections.sort( list, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
-							t1.getValue().compareToIgnoreCase( t2.getValue() ) );
-		return list;
-	}
-
+	/**
+	 * @return a list of TreeItems from the database
+	 * 		using file names
+	 */
 	public List<TreeItem<String>> writeTree() 
 	{
-		/* 
-		 * TODO: get directories and return full tree from memory listing, delete new Path()
-		 * extract branch loop to new method to call within map keyset loop
-		 * keyset needs to find root node and build tree from it with root only expanChallenge
-		 * 
-		 */
-		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();		
-		Path path = new Path();
-		for ( String s : path.getFolders() )
+		List<TreeItem<String>> list = addChildren( 0 );
+		if ( list != null )
+			return list;
+		return new ArrayList<TreeItem<String>>();
+	}
+
+	private List<TreeItem<String>> addChildren( int parent )
+	{
+		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();
+		for ( DirFile f : dataService.findByParent( parent ) )
 		{
-			TreeItem<String> item = new TreeItem<String>( s );
-			if ( path.getChild( s ) != null )
-				item.getChildren().addAll( addChildren( path.getChild( s ) ) );
+			TreeItem<String> item = new TreeItem<String>( f.getName() );
+			List<TreeItem<String>> children = addChildren( f.getId() );
+			if ( children != null )
+				item.getChildren().addAll( children );
 			list.add( item );
 		}
-		Collections.sort( list, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
-							t1.getValue().compareToIgnoreCase( t2.getValue() ) );
+		if ( list.size() < 1 )
+			return null;
+		list.sort( ( t1, t2 ) -> ( t1.getValue().compareTo( t2.getValue() ) ) );
 		return list;
 	}
 
+	private List<TreeItem<DirFile>> addChildrenTest( int parent )
+	{
+		List<TreeItem<DirFile>> list = new ArrayList<TreeItem<DirFile>>();
+		for ( DirFile f : dataService.findByParent( parent ) )
+		{
+			TreeItem<DirFile> item = new TreeItem<DirFile>( f );
+			list.add( item );
+		}
+		if ( list.size() < 1 )
+			return null;
+		list.sort( ( t1, t2 ) -> ( t1.getValue().getName().compareTo( t2.getValue().getName() ) ) );
+		return list;
+	}
+	
 	public TreeItem<String> getTreeItems(Path pathRoot) 
 	{
 		// TODO Auto-generated method stub
@@ -469,12 +429,12 @@ public class Model
 		p.setName( name );
 		p.setParent( parent );
 		p.setContents( getFileList( path ) );
-		addDirectory( path, p );
+//		addDirectory( path, p );
 	}
 	
-	public void addDirectory( String dir, Path path )
-	{
-		directory.addDirectory( dir, path );
-	}
-
+//	public void addDirectory( String dir, Path path )
+//	{
+//		directory.addDirectory( dir, path );
+//	}
+//
 }

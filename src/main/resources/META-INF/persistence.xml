@@ -1,23 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
-	<persistence-unit name="directory-map" transaction-type="JTA">
-		<jta-data-source>jdbc/database</jta-data-source>
+<persistence version="2.0" 
+xmlns="http://java.sun.com/xml/ns/persistence" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://java.sun.com/xml/ns/persistence 
+http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+	<persistence-unit name="directory-map" transaction-type="RESOURCE_LOCAL">
+		<class>application.model.data.DirFile</class>
 		<properties>
-			<property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/>
-			<property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema"/>
-			<property name="openjpa.TransactionMode" value="managed"/>
-			<property name="openjpa.ConnectionFactoryMode" value="managed"/>
+			<property name="javax.persistence.jdbc.driver" 
+				value="org.apache.derby.jdbc.EmbeddedDriver" />
+			<property name="javax.persistence.jdbc.url"
+				value="jdbc:derby:database;create=true" />
+			<property name="javax.persistence.jdbc.user" 
+				value="admin" />
+			<property name="javax.persistence.jdbc.password" 
+				value="" />
+	
+		<!-- EclipseLink should create the database schema automatically -->
+			<property name="eclipselink.ddl-generation" 
+				value="drop-and-create-tables" />
+			<property name="eclipselink.ddl-generation.output-mode" 
+				value="database" />
 		</properties>
-	</persistence-unit>
-<!--
- 	<persistence-unit name="accounts" transaction-type="JTA">
-		<jta-data-source>jdbc/database</jta-data-source>
-		<properties>
-			<property name="javax.persistence.schema-generation.database.action" value=""/>
-			<property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema"/>
-			<property name="openjpa.TransactionMode" value="managed"/>
-			<property name="openjpa.ConnectionFactoryMode" value="managed"/>
-		</properties>
-	</persistence-unit>
- -->
+
+  </persistence-unit>
+  <persistence-unit name="accounts" transaction-type="RESOURCE_LOCAL">
+  	<class>application.model.data.Account</class>
+  	<properties>
+  		<property name="javax.peristence.jdbc.driver"
+  			value="org.apache.derby.jdbc.EmbeddedDriver" />
+			<property name="javax.persistence.jdbc.url"
+				value="jdbc:derby:database;create=true" />
+			<property name="javax.persistence.jdbc.user" 
+				value="admin" />
+			<property name="javax.persistence.jdbc.password" 
+				value="" />
+	
+		<!-- EclipseLink should create the database schema automatically -->
+			<property name="eclipselink.ddl-generation" 
+				value="create-or-extend-tables" />
+			<property name="eclipselink.ddl-generation.output-mode" 
+				value="database" />
+  	</properties>
+  </persistence-unit>
  </persistence>

@@ -10,6 +10,7 @@ import java.util.ResourceBundle;
 import application.model.FileDetails;
 import application.model.HashKeys;
 import application.model.Model;
+import application.model.ModelJPA;
 import application.model.data.Account;
 import application.model.data.Path;
 import javafx.application.Platform;
@@ -64,7 +65,7 @@ public class FTPController implements Initializable
 	private String currentPath;
 	private String rootPath;
 	private ObservableList<FileDetails> tableViewList;
-	private Model model;
+	private ModelJPA model;
 	private HashMap<HashKeys, String> connDetails;
 	
 	@Override
@@ -140,10 +141,10 @@ public class FTPController implements Initializable
 		
 	}
 
-	public Model getModel()
+	public ModelJPA getModel()
 	{
 		if ( model == null )
-			model = new Model();
+			model = new ModelJPA();
 		return model;
 	}
 
@@ -213,7 +214,7 @@ public class FTPController implements Initializable
 				p.setName( item.getValue() );
 				p.setParent( item.getParent().getValue() );
 				p.setContents( model.getFileList( currentPath ) );
-				model.addDirectory( currentPath, p );
+//				model.addDirectory( currentPath, p );
 //				pathMap.put( currentPath, p );
 //				Path child = model.findFamily( item, pathRoot );
 				item.getChildren().addAll( model.addLeaves( p.getFolders() ) );
