@@ -5,6 +5,6 @@ target
 .settings
 .ds_store
 .factorypath
-database
+/database
 derby.log
 
