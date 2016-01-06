@@ -32,7 +32,7 @@ public class DirFile implements Serializable
 
 	private String name;
 	private int parent;
-	private String type;
+	private DirFileType type;
 	private long size;
 
 	/**
@@ -89,7 +89,7 @@ public class DirFile implements Serializable
 	/**
 	 * @return the type
 	 */
-	public String getType()
+	public DirFileType getType()
 	{
 		return type;
 	}
@@ -98,7 +98,7 @@ public class DirFile implements Serializable
 	 * @param type
 	 *            the type to set
 	 */
-	public void setType( String type )
+	public void setType( DirFileType type )
 	{
 		this.type = type;
 	}

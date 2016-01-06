@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 import application.model.FileDetails;
-import application.model.HashKeys;
+import application.model.data.AccountKeys;
+import application.model.data.DirFile;
 import application.model.Model;
 import application.model.ModelJPA;
 import application.model.data.Account;
@@ -55,7 +56,7 @@ public class FTPController implements Initializable
 	@FXML private TitledPane fileViewerTitledPane;
 	@FXML private TitledPane consoleTitledPane;
 	@FXML private TextArea consoleTextLabel;
-	@FXML private TableView<FileDetails> tableView;
+	@FXML private TableView<DirFile> tableView;
 	@FXML private Button refreshButton;
 	@FXML private Button downloadButton;
 	@FXML private Button editButton;
@@ -64,9 +65,9 @@ public class FTPController implements Initializable
 	private Desktop desktop = Desktop.getDesktop();
 	private String currentPath;
 	private String rootPath;
-	private ObservableList<FileDetails> tableViewList;
+	private ObservableList<DirFile> tableViewList;
 	private ModelJPA model;
-	private HashMap<HashKeys, String> connDetails;
+	private HashMap<AccountKeys, String> connDetails;
 	
 	@Override
 	public void initialize( URL arg0, ResourceBundle arg1 )
@@ -101,7 +102,7 @@ public class FTPController implements Initializable
 		currentPath += directoryField.getText();
 		rootPath = currentPath;
 		model.startDirectory( currentPath, directoryField.getText(), "root" );
-		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", connDetails.get( HashKeys.HOST ), connDetails.get( HashKeys.USERNAME ) ) );
+		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", connDetails.get( AccountKeys.HOST ), connDetails.get( AccountKeys.USERNAME ) ) );
 		wTc( model.connect( connDetails ) );
 		wTc( "getting server contents" );
 		updateTableView( model.getFileList( currentPath ) );
@@ -185,12 +186,12 @@ public class FTPController implements Initializable
 	
 	private void setConnectionDetails( Boolean remember )
 	{
-		connDetails = new HashMap<HashKeys, String>();
-		connDetails.put( HashKeys.HOST, hostDetailsField.getText() );
-		connDetails.put( HashKeys.USERNAME, usernameField.getText() );
-		connDetails.put( HashKeys.PASSWORD, passwordField.getText() );
-		connDetails.put( HashKeys.PATH, directoryField.getText() );
-		connDetails.put( HashKeys.REMEMBER, remember.toString() );
+		connDetails = new HashMap<AccountKeys, String>();
+		connDetails.put( AccountKeys.HOST, hostDetailsField.getText() );
+		connDetails.put( AccountKeys.USERNAME, usernameField.getText() );
+		connDetails.put( AccountKeys.PASSWORD, passwordField.getText() );
+		connDetails.put( AccountKeys.PATH, directoryField.getText() );
+		connDetails.put( AccountKeys.REMEMBER, remember.toString() );
 	}
 
 	private void setTreeRoot()
@@ -210,22 +211,22 @@ public class FTPController implements Initializable
 		{
 			if ( model.changeDirectory( currentPath ) )
 			{
-				Path p = new Path();
-				p.setName( item.getValue() );
-				p.setParent( item.getParent().getValue() );
-				p.setContents( model.getFileList( currentPath ) );
+//				Path p = new Path();
+//				p.setName( item.getValue() );
+//				p.setParent( item.getParent().getValue() );
+//				p.setContents( model.getFileList( currentPath ) );
 //				model.addDirectory( currentPath, p );
 //				pathMap.put( currentPath, p );
 //				Path child = model.findFamily( item, pathRoot );
-				item.getChildren().addAll( model.addLeaves( p.getFolders() ) );
-				if ( !item.isExpanded() )
-					item.setExpanded( true );
+//				item.getChildren().addAll( model.addLeaves( p.getFolders() ) );
+//				if ( !item.isExpanded() )
+//					item.setExpanded( true );
 			}
 		}		
 		updateTableView( model.getFileList( currentPath ) );
 	}
 	
-	private void updateTableView( List<FileDetails> list )
+	private void updateTableView( List<DirFile> list )
 	{
 		tableViewList = FXCollections.observableArrayList( list );
 		tableView.setItems( tableViewList );
