@@ -150,7 +150,8 @@ public class ModelJPA
 	}
 	
 	/**
-	 * used to change directory of on the ftp server
+	 * compares stored data to dir, if it does not exist
+	 * the connects to ftp and retrieves files
 	 * @param dir String directory to change to
 	 * @return boolean of success or failure
 	 * @throws IOException
@@ -192,7 +193,7 @@ public class ModelJPA
 
 	/**
 	 * gets a list of the files available
-	 * @return List<FileDetails>
+	 * @return List of directory files
 	 */
 	public List<DirFile> getFileList()
 	{
@@ -219,7 +220,7 @@ public class ModelJPA
 
 	/**
 	 * gets a list of the files available for the given directory
-	 * @return List<FileDetails>
+	 * @return List of directory files
 	 */
 	public List<DirFile> getFileList( String dir )
 	{
@@ -420,13 +421,13 @@ public class ModelJPA
 		return null;
 	}
 
-	private void listChildren( String root, TreeItem<String> child )
-	{
-		familyTree.add( child.getValue() );
-		if ( child.getValue().equals( root ) )
-			return;
-		listChildren( root, child.getParent() );
-	}
+//	private void listChildren( String root, TreeItem<String> child )
+//	{
+//		familyTree.add( child.getValue() );
+//		if ( child.getValue().equals( root ) )
+//			return;
+//		listChildren( root, child.getParent() );
+//	}
 	
 //	private Path getPathObject( Path root, String name )
 //	{
@@ -464,6 +465,10 @@ public class ModelJPA
 //		return returnItem;
 //	}
 	
+	/**
+	 * @param list of items to convert into Tree items
+	 * @return list of tree items
+	 */
 	public List<TreeItem<String>> addLeaves( List<String> list )
 	{
 		List<TreeItem<String>> branches = new ArrayList<TreeItem<String>>();
@@ -474,6 +479,11 @@ public class ModelJPA
 		return branches;
 	}
 	
+	/**
+	 * @param item treeItem you need to turn into a directory path
+	 * @param root the name of the directory root
+	 * @return directory path
+	 */
 	public String getCurrentDirectoryString( TreeItem<String> item, String root )
 	{
 		String path = "";
@@ -500,19 +510,11 @@ public class ModelJPA
 			return; 
 		DirFile file = new DirFile();
 		List<DirFile> files = dataService.findByName( parent );
+		if ( files == null )
+			//	connect to ftp
 		
+		// TODO: needs updating 
 		dataService.saveOrPersist( file );
-// need to handle pressing connect without any details
-//		Path p = new Path();
-//		p.setName( name );
-//		p.setParent( parent );
-//		p.setContents( getFileList( path ) );
-//		addDirectory( path, p );
 	}
-	
-//	public void addDirectory( String dir, Path path )
-//	{
-//		directory.addDirectory( dir, path );
-//	}
-//
+
 }
