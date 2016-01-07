@@ -19,7 +19,10 @@ import javax.persistence.NamedQuery;
 	@NamedQuery( name = "DirFile.findByParent", 
 			query = "SELECT f FROM DirFile f WHERE f.parent = :filter" ),
 	@NamedQuery( name = "DirFile.findRoot", 
-			query = "SELECT f FROM DirFile f WHERE f.id = 0" ), 
+			query = "SELECT f FROM DirFile f WHERE f.id = 0" ),
+	@NamedQuery( name = "DirFile.findByNameAndParent",
+			query = "SELECT f FROM DirFile f WHERE LOWER(f.name) LIKE :name "
+					+ "AND f.parent = :parent" )
 })
 @Entity
 public class DirFile implements Serializable

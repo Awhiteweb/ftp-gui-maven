@@ -63,21 +63,21 @@ public class DataService
 	
 	public List<DirFile> findById( int filter )
 	{
-		if ( filter < 1 )
-		{
-			return findRoot();
-		}
 		return entityManager.createNamedQuery( "DirFile.findById", DirFile.class )
 				.setParameter( "filter", filter )
 				.getResultList();		
 	}
+	
+	public DirFile findByNameAndParent( String name, int parent )
+	{
+		return entityManager.createNamedQuery( "DirFile.findByNameAndParent", DirFile.class )
+				.setParameter( "name", name )
+				.setParameter( "parent", parent )
+				.getSingleResult();
+	}
 
 	public List<DirFile> findByParent( int filter )
 	{
-		if ( filter < 1 )
-		{
-			return findRoot();
-		}
 		return entityManager.createNamedQuery( "DirFile.findByParent", DirFile.class )
 				.setParameter( "filter", filter )
 				.getResultList();

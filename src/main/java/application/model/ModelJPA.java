@@ -157,6 +157,8 @@ public class ModelJPA
 	 */
 	public boolean changeDirectory( String dir )
 	{
+		if ( pathExists( dir ) )
+			return true;
 		if ( ftp.isConnected() )
 		{
 			try
@@ -172,6 +174,22 @@ public class ModelJPA
 		return false;
 	}
 	
+	private boolean pathExists( String dir )
+	{
+		String[] path = dirToArray( dir );
+		if ( path.length < 1 )
+			return false;
+		
+		DirFile parent = dataService.findByNameAndParent( path[0], 0 );
+		for ( int i = 1; i < path.length; i++ )
+		{
+			parent = dataService.findByNameAndParent( path[i], parent.getId() );
+			if ( parent == null )
+				return false;
+		}
+		return true;
+	}
+
 	/**
 	 * gets a list of the files available
 	 * @return List<FileDetails>
@@ -207,29 +225,93 @@ public class ModelJPA
 	{
 		dataService.resetTestData();
 		List<DirFile> files = dataService.findAll();
+		if ( files.size() > 0 )
+			return files;
+		
+		if ( pathExists( dir ) )
+			return getDBFiles( dir );
+
+		changeDirectory( dir );
+		createParents( dir );
+		int parentId = getParentId( dir );
+		files = new ArrayList<DirFile>();
+		try
+		{
+			ftpFileArray = ftp.listFiles();
+			for ( FTPFile file : ftpFileArray )
+			{
+				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
+				DirFile f = new DirFile();
+				f.setName( file.getName() );
+				f.setType( fileType( file.getType() ) );
+				f.setSize( file.getSize() );
+				f.setParent( parentId );
+				dataService.saveOrPersist( f );
+				files.add( f );
+			}
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
 		return files;
-		
-//		if ( directory.getDirectory( dir ) != null )
-//			return directory.getDirectory( dir ).getContents();
-		
-//		changeDirectory( dir );
-//		List<FileDetails> files = new ArrayList<FileDetails>();
-//		try
-//		{
-//			ftpFileArray = ftp.listFiles();
-//			for ( FTPFile file : ftpFileArray )
-//			{
-//				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
-//				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
-//			}
-//		}
-//		catch (IOException e)
-//		{
-//			e.printStackTrace();
-//		}
-//		return files;
 	}
 
+	private List<DirFile> getDBFiles( String dir )
+	{
+		String[] path = dirToArray( dir );
+		DirFile parent = dataService.findByNameAndParent( path[0], 0 );
+		for ( int i = 1; i < path.length; i++ )
+		{
+			parent = dataService.findByNameAndParent( path[i], parent.getId() );
+		}
+		return dataService.findByParent( parent.getId() );
+	}
+
+	private String[] dirToArray( String dir )
+	{
+		dir = dir.substring( 0, 1 ).equals( "/" ) ? dir.substring( 1 ) : dir;
+		String[] path = dir.split( "/" );
+		return path;
+	}
+	
+	private void createParents( String dir )
+	{
+		String[] path = dirToArray( dir );
+		DirFile parent = dataService.findByNameAndParent( path[0], 0 );
+		for ( int i = 1; i < path.length; i++ )
+		{
+			parent = addChild( path[i], parent.getId() );
+		}
+	}
+
+	private DirFile addChild( String path, int parent )
+	{
+		DirFile child = dataService.findByNameAndParent( path, parent );
+		if ( child == null )
+		{
+			DirFile c = new DirFile();
+			c.setName( path );
+			c.setParent( parent );
+			c.setType( DirFileType.FOLD );
+			dataService.saveOrPersist( c );
+			addChild( path, parent );
+		}
+		return child;
+	}
+	
+	private int getParentId( String dir )
+	{
+		String[] path = dirToArray( dir );
+		DirFile parent = dataService.findByNameAndParent( path[0], 0 );
+		for ( int i = 1; i < path.length; i++ )
+		{
+			parent = dataService.findByNameAndParent( path[i], parent.getId() );
+		}
+		return parent.getId();
+	}
+	
+	
 	/**
 	 * opens a file explorer window
 	 * @param event
@@ -415,7 +497,12 @@ public class ModelJPA
 	public void startDirectory( String path, String name, String parent )
 	{
 		if ( path == null )
-			return; // need to handle pressing connect without any details
+			return; 
+		DirFile file = new DirFile();
+		List<DirFile> files = dataService.findByName( parent );
+		
+		dataService.saveOrPersist( file );
+// need to handle pressing connect without any details
 //		Path p = new Path();
 //		p.setName( name );
 //		p.setParent( parent );

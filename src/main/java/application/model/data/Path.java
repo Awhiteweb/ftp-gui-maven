@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import application.model.FileDetails;
 import application.model.data.DirFile;
 
 public class Path
@@ -18,7 +17,7 @@ public class Path
 	private String name;
 	private String parent;
 	private List<String> folders;
-	private List<FileDetails> files;
+	private List<DirFile> files;
 	
 	public Path()
 	{
@@ -88,7 +87,7 @@ public class Path
 		files = new ArrayList<DirFile>();
 		for ( DirFile f : contents )
 		{
-			if ( f.getType() == AccountKeys.FOLD )
+			if ( f.getType() == DirFileType.FOLD )
 				if ( !f.getName().equals(".") && !f.getName().equals( ".." ) )
 					folders.add( f.getName() );
 			else
