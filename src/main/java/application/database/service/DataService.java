@@ -7,6 +7,7 @@ import javax.persistence.Persistence;
 import javax.persistence.criteria.CriteriaQuery;
 
 import application.model.data.DirFile;
+import application.model.data.DirFileType;
 
 public class DataService
 {
@@ -62,21 +63,21 @@ public class DataService
 	
 	public List<DirFile> findById( int filter )
 	{
-		if ( filter < 1 )
-		{
-			return findRoot();
-		}
 		return entityManager.createNamedQuery( "DirFile.findById", DirFile.class )
 				.setParameter( "filter", filter )
 				.getResultList();		
 	}
+	
+	public DirFile findByNameAndParent( String name, int parent )
+	{
+		return entityManager.createNamedQuery( "DirFile.findByNameAndParent", DirFile.class )
+				.setParameter( "name", name )
+				.setParameter( "parent", parent )
+				.getSingleResult();
+	}
 
 	public List<DirFile> findByParent( int filter )
 	{
-		if ( filter < 1 )
-		{
-			return findRoot();
-		}
 		return entityManager.createNamedQuery( "DirFile.findByParent", DirFile.class )
 				.setParameter( "filter", filter )
 				.getResultList();
@@ -93,14 +94,20 @@ public class DataService
 		if ( findAll().isEmpty() )
 		{
 			final Object[][] files = { 
-					{ "index.html", 0 }, { "people", 0 }, { "about", 0 }, { "friends", 0 }, { "data", 0 }, 
-					{ "index.html", 1 }, { "index.php", 2 }, { "home.php", 3 }, { "index.html", 4 }, { "people.html", 5 }, 
-					{ "people.php", 1 }, { "service.php", 2 }, { "filea.css", 3 }, { "fileb.js", 4 }, { "filec.html", 5 } };
+					{ "index.html", 0, DirFileType.FILE }, { "people", 0, DirFileType.FOLD }, 
+					{ "about", 0, DirFileType.FOLD }, { "friends", 0, DirFileType.FOLD }, 
+					{ "data", 0, DirFileType.FOLD }, { "index.html", 1, DirFileType.FILE }, 
+					{ "index.php", 2, DirFileType.FILE }, { "home.php", 3, DirFileType.FILE }, 
+					{ "index.html", 4, DirFileType.FILE }, { "people.html", 5, DirFileType.FILE }, 
+					{ "people.php", 1, DirFileType.FILE }, { "service.php", 2, DirFileType.FILE }, 
+					{ "filea.css", 3, DirFileType.FILE }, { "fileb.js", 4, DirFileType.FILE }, 
+					{ "filec.html", 5, DirFileType.FILE } };
 			for ( Object[] file : files )
 			{
 				DirFile df = new DirFile();
 				df.setName( (String) file[0] );
 				df.setParent( (Integer) file[1] );
+				df.setType( (DirFileType) file[2] );
 				saveOrPersist( df );
 			}
 		}

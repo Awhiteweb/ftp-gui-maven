@@ -16,8 +16,9 @@ import org.apache.commons.net.ftp.FTPReply;
 import application.database.service.AccountService;
 import application.database.service.DataService;
 import application.model.data.Account;
+import application.model.data.AccountKeys;
 import application.model.data.DirFile;
-import application.model.data.Path;
+import application.model.data.DirFileType;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -82,17 +83,17 @@ public class ModelJPA
 	 * @param connDetails
 	 * @return string message for apps console log
 	 */
-	public String connect( HashMap<HashKeys, String> connDetails )
+	public String connect( HashMap<AccountKeys, String> connDetails )
 	{ 
 		if ( ftp == null )
 			configure();
 		try
 		{
-			if ( connDetails.get( HashKeys.REMEMBER ).equals( "true" ) )
+			if ( connDetails.get( AccountKeys.REMEMBER ).equals( "true" ) )
 				addAccount( connDetails );
-			ftp.connect( connDetails.get( HashKeys.HOST ) );
-			ftp.login( connDetails.get( HashKeys.USERNAME ), 
-					   connDetails.get( HashKeys.PASSWORD ) );
+			ftp.connect( connDetails.get( AccountKeys.HOST ) );
+			ftp.login( connDetails.get( AccountKeys.USERNAME ), 
+					   connDetails.get( AccountKeys.PASSWORD ) );
 			ftpReplyCode = ftp.getReplyCode();
 			ftp.setControlKeepAliveTimeout(300); // stays alive for 5 mins
 			if( !FTPReply.isPositiveCompletion( ftpReplyCode ) )
@@ -101,7 +102,7 @@ public class ModelJPA
 				System.err.println( "FTP server refused connection." );
 				System.exit(1);
 			}
-			ftp.changeWorkingDirectory( connDetails.get( HashKeys.PATH ) );
+			ftp.changeWorkingDirectory( connDetails.get( AccountKeys.PATH ) );
 			return "connected to server: reply code - " + ftpReplyCode;
 		}
 		catch (IOException e)
@@ -110,14 +111,14 @@ public class ModelJPA
 		}
 	}
 
-	private void addAccount( HashMap<HashKeys, String> connDetails )
+	private void addAccount( HashMap<AccountKeys, String> connDetails )
 	{
 		accountService.saveOrPersist( 
 				new Account( 
-						connDetails.get( HashKeys.HOST ), 
-						connDetails.get( HashKeys.USERNAME ), 
-						connDetails.get( HashKeys.PASSWORD ), 
-						connDetails.get( HashKeys.PATH ) 
+						connDetails.get( AccountKeys.HOST ), 
+						connDetails.get( AccountKeys.USERNAME ), 
+						connDetails.get( AccountKeys.PASSWORD ), 
+						connDetails.get( AccountKeys.PATH ) 
 						) 
 				);
 	}
@@ -156,6 +157,8 @@ public class ModelJPA
 	 */
 	public boolean changeDirectory( String dir )
 	{
+		if ( pathExists( dir ) )
+			return true;
 		if ( ftp.isConnected() )
 		{
 			try
@@ -171,20 +174,40 @@ public class ModelJPA
 		return false;
 	}
 	
+	private boolean pathExists( String dir )
+	{
+		String[] path = dirToArray( dir );
+		if ( path.length < 1 )
+			return false;
+		
+		DirFile parent = dataService.findByNameAndParent( path[0], 0 );
+		for ( int i = 1; i < path.length; i++ )
+		{
+			parent = dataService.findByNameAndParent( path[i], parent.getId() );
+			if ( parent == null )
+				return false;
+		}
+		return true;
+	}
+
 	/**
 	 * gets a list of the files available
 	 * @return List<FileDetails>
 	 */
-	public List<FileDetails> getFileList()
+	public List<DirFile> getFileList()
 	{
-		List<FileDetails> files = new ArrayList<FileDetails>();
+		List<DirFile> files = new ArrayList<DirFile>();
 		try
 		{
 			ftpFileArray = ftp.listFiles();
 			for ( FTPFile file : ftpFileArray )
 			{
 				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
-				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
+				DirFile df = new DirFile();
+				df.setName( file.getName() );
+				df.setSize( file.getSize() );
+				df.setType( fileType( file.getType() ) );
+				files.add( df );
 			}
 		}
 		catch (IOException e)
@@ -198,36 +221,97 @@ public class ModelJPA
 	 * gets a list of the files available for the given directory
 	 * @return List<FileDetails>
 	 */
-	public List<FileDetails> getFileList( String dir )
+	public List<DirFile> getFileList( String dir )
 	{
 		dataService.resetTestData();
 		List<DirFile> files = dataService.findAll();
-		List<FileDetails> fds = new ArrayList<FileDetails>();
-		for ( DirFile file : files )
-			fds.add( new FileDetails( file.getName(), "file", 5 ) );
-		return fds;
+		if ( files.size() > 0 )
+			return files;
 		
-//		if ( directory.getDirectory( dir ) != null )
-//			return directory.getDirectory( dir ).getContents();
-		
-//		changeDirectory( dir );
-//		List<FileDetails> files = new ArrayList<FileDetails>();
-//		try
-//		{
-//			ftpFileArray = ftp.listFiles();
-//			for ( FTPFile file : ftpFileArray )
-//			{
-//				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
-//				files.add( new FileDetails( file.getName(), fileType( file.getType() ) ,file.getSize() ) );
-//			}
-//		}
-//		catch (IOException e)
-//		{
-//			e.printStackTrace();
-//		}
-//		return files;
+		if ( pathExists( dir ) )
+			return getDBFiles( dir );
+
+		changeDirectory( dir );
+		createParents( dir );
+		int parentId = getParentId( dir );
+		files = new ArrayList<DirFile>();
+		try
+		{
+			ftpFileArray = ftp.listFiles();
+			for ( FTPFile file : ftpFileArray )
+			{
+				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
+				DirFile f = new DirFile();
+				f.setName( file.getName() );
+				f.setType( fileType( file.getType() ) );
+				f.setSize( file.getSize() );
+				f.setParent( parentId );
+				dataService.saveOrPersist( f );
+				files.add( f );
+			}
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		return files;
 	}
 
+	private List<DirFile> getDBFiles( String dir )
+	{
+		String[] path = dirToArray( dir );
+		DirFile parent = dataService.findByNameAndParent( path[0], 0 );
+		for ( int i = 1; i < path.length; i++ )
+		{
+			parent = dataService.findByNameAndParent( path[i], parent.getId() );
+		}
+		return dataService.findByParent( parent.getId() );
+	}
+
+	private String[] dirToArray( String dir )
+	{
+		dir = dir.substring( 0, 1 ).equals( "/" ) ? dir.substring( 1 ) : dir;
+		String[] path = dir.split( "/" );
+		return path;
+	}
+	
+	private void createParents( String dir )
+	{
+		String[] path = dirToArray( dir );
+		DirFile parent = dataService.findByNameAndParent( path[0], 0 );
+		for ( int i = 1; i < path.length; i++ )
+		{
+			parent = addChild( path[i], parent.getId() );
+		}
+	}
+
+	private DirFile addChild( String path, int parent )
+	{
+		DirFile child = dataService.findByNameAndParent( path, parent );
+		if ( child == null )
+		{
+			DirFile c = new DirFile();
+			c.setName( path );
+			c.setParent( parent );
+			c.setType( DirFileType.FOLD );
+			dataService.saveOrPersist( c );
+			addChild( path, parent );
+		}
+		return child;
+	}
+	
+	private int getParentId( String dir )
+	{
+		String[] path = dirToArray( dir );
+		DirFile parent = dataService.findByNameAndParent( path[0], 0 );
+		for ( int i = 1; i < path.length; i++ )
+		{
+			parent = dataService.findByNameAndParent( path[i], parent.getId() );
+		}
+		return parent.getId();
+	}
+	
+	
 	/**
 	 * opens a file explorer window
 	 * @param event
@@ -277,18 +361,18 @@ public class ModelJPA
         }
     }
 	
-	private String fileType( int type )
+	private DirFileType fileType( int type )
 	{
 		switch( type )
 		{
 		case 0:
-			return HashKeys.TYPE_FILE.getName();
+			return DirFileType.FILE;
 		case 1:
-			return HashKeys.TYPE_DIR.getName();
+			return DirFileType.FOLD;
 		case 2:
-			return HashKeys.TYPE_SYMB.getName();
+			return DirFileType.SYMB;
 		default:
-			return HashKeys.TYPE_UNKN.getName();
+			return DirFileType.UNKN;
 		}
 	}
 
@@ -315,33 +399,22 @@ public class ModelJPA
 		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();
 		for ( DirFile f : dataService.findByParent( parent ) )
 		{
-			TreeItem<String> item = new TreeItem<String>( f.getName() );
-			List<TreeItem<String>> children = addChildren( f.getId() );
-			if ( children != null )
-				item.getChildren().addAll( children );
-			list.add( item );
+			if ( f.getType() == DirFileType.FOLD )
+			{
+				TreeItem<String> item = new TreeItem<String>( f.getName() );
+				List<TreeItem<String>> children = addChildren( f.getId() );
+				if ( children != null )
+					item.getChildren().addAll( children );
+				list.add( item );
+			}
 		}
 		if ( list.size() < 1 )
 			return null;
 		list.sort( ( t1, t2 ) -> ( t1.getValue().compareTo( t2.getValue() ) ) );
 		return list;
 	}
-
-	private List<TreeItem<DirFile>> addChildrenTest( int parent )
-	{
-		List<TreeItem<DirFile>> list = new ArrayList<TreeItem<DirFile>>();
-		for ( DirFile f : dataService.findByParent( parent ) )
-		{
-			TreeItem<DirFile> item = new TreeItem<DirFile>( f );
-			list.add( item );
-		}
-		if ( list.size() < 1 )
-			return null;
-		list.sort( ( t1, t2 ) -> ( t1.getValue().getName().compareTo( t2.getValue().getName() ) ) );
-		return list;
-	}
 	
-	public TreeItem<String> getTreeItems(Path pathRoot) 
+	public TreeItem<String> getTreeItems() 
 	{
 		// TODO Auto-generated method stub
 		return null;
@@ -355,41 +428,41 @@ public class ModelJPA
 		listChildren( root, child.getParent() );
 	}
 	
-	private Path getPathObject( Path root, String name )
-	{
-		if ( root.getChild( name ) != null )
-			return root.getChild( name );
-		String dir = "";
-		for ( String s : familyTree )
-		{
-			dir = s + "/" + dir;
-		}
-		List<FileDetails> list = getFileList( dir );
-		Path item = new Path();
-		item.setName( name );
-		item.setParent( root.getName() );
-		item.setContents( list );
-		return item;
-	}
+//	private Path getPathObject( Path root, String name )
+//	{
+//		if ( root.getChild( name ) != null )
+//			return root.getChild( name );
+//		String dir = "";
+//		for ( String s : familyTree )
+//		{
+//			dir = s + "/" + dir;
+//		}
+//		List<FileDetails> list = getFileList( dir );
+//		Path item = new Path();
+//		item.setName( name );
+//		item.setParent( root.getName() );
+//		item.setContents( list );
+//		return item;
+//	}
 	
-	public Path findFamily( TreeItem<String> item, Path pathRoot ) 
-	{
-		Path returnItem = pathRoot;
-		familyTree = new ArrayList<String>();
-		listChildren( pathRoot.getName(), item );
-		if ( item.getValue().equals( pathRoot.getName() ) )
-			return pathRoot;
-		if ( item.getParent().getValue().equals( pathRoot.getName() ) )
-			return getPathObject( pathRoot, item.getValue() );
-		for ( int i = familyTree.size() - 2; i == 0; i-- )
-		{
-			if ( i == 0 )
-				returnItem = getPathObject( returnItem, familyTree.get( i ) );
-			else
-				returnItem = returnItem.getChild( familyTree.get( i ) );
-		}
-		return returnItem;
-	}
+//	public Path findFamily( TreeItem<String> item, Path pathRoot ) 
+//	{
+//		Path returnItem = pathRoot;
+//		familyTree = new ArrayList<String>();
+//		listChildren( pathRoot.getName(), item );
+//		if ( item.getValue().equals( pathRoot.getName() ) )
+//			return pathRoot;
+//		if ( item.getParent().getValue().equals( pathRoot.getName() ) )
+//			return getPathObject( pathRoot, item.getValue() );
+//		for ( int i = familyTree.size() - 2; i == 0; i-- )
+//		{
+//			if ( i == 0 )
+//				returnItem = getPathObject( returnItem, familyTree.get( i ) );
+//			else
+//				returnItem = returnItem.getChild( familyTree.get( i ) );
+//		}
+//		return returnItem;
+//	}
 	
 	public List<TreeItem<String>> addLeaves( List<String> list )
 	{
@@ -424,11 +497,16 @@ public class ModelJPA
 	public void startDirectory( String path, String name, String parent )
 	{
 		if ( path == null )
-			return; // need to handle pressing connect without any details
-		Path p = new Path();
-		p.setName( name );
-		p.setParent( parent );
-		p.setContents( getFileList( path ) );
+			return; 
+		DirFile file = new DirFile();
+		List<DirFile> files = dataService.findByName( parent );
+		
+		dataService.saveOrPersist( file );
+// need to handle pressing connect without any details
+//		Path p = new Path();
+//		p.setName( name );
+//		p.setParent( parent );
+//		p.setContents( getFileList( path ) );
 //		addDirectory( path, p );
 	}
 	
