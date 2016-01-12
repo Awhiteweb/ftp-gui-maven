@@ -43,9 +43,9 @@ public class FTPController implements Initializable
 	@FXML private TextField passwordField;
 	@FXML private TextField directoryField;
 	@FXML private CheckBox rememberDetails;
-	@FXML private TreeView<String> treeView;
+	@FXML private TreeView<DirFile> treeView;
 	@FXML private TableColumn<DirFile, String> fileNameCol;
-	@FXML private TableColumn<DirFile, Integer> fileSizeCol;
+	@FXML private TableColumn<DirFile, Number> fileSizeCol;
 	@FXML private TableColumn<DirFile, DirFileType> fileTypeCol;
 	@FXML private ScrollPane consoleScrollPane;
 	@FXML private Ellipse progressEllipse;
@@ -58,7 +58,7 @@ public class FTPController implements Initializable
 	@FXML private Button downloadButton;
 	@FXML private Button editButton;
 	@FXML private Button uploadButton;
-	private TreeItem<String> root;
+	private TreeItem<DirFile> root;
 	private Desktop desktop = Desktop.getDesktop();
 	private String currentPath;
 	private String rootPath;
@@ -168,7 +168,7 @@ public class FTPController implements Initializable
 		this.treeView.addEventHandler( MouseEvent.MOUSE_CLICKED, ( MouseEvent event ) -> {
 			handleTreeView( event );
 		} );
-		root = new TreeItem<String>( "root" );
+		root = new TreeItem<DirFile>( new DirFile("root") );
 	}
 
 	private void initTable()
@@ -180,7 +180,7 @@ public class FTPController implements Initializable
 		fileTypeCol.setCellValueFactory( 
 				new PropertyValueFactory<DirFile, DirFileType>( "type" ) );
 		fileSizeCol.setCellValueFactory( 
-				new PropertyValueFactory<DirFile, Integer>( "size" ) );
+				new PropertyValueFactory<DirFile, Number>( "size" ) );
 	}
 	
 	private void setConnectionDetails( Boolean remember )
@@ -203,22 +203,15 @@ public class FTPController implements Initializable
 	private void handleTreeView( MouseEvent event )
 	{
 		System.out.println( "tree event: " + event.getEventType().getName() );
-		TreeItem<String> item = treeView.getSelectionModel().getSelectedItem();
+		TreeItem<DirFile> item = treeView.getSelectionModel().getSelectedItem();
 		System.out.println( item.getValue() );
 		currentPath = model.getCurrentDirectoryString( item, rootPath );
 		if ( item.isLeaf() )
 		{
 			if ( model.changeDirectory( currentPath ) )
 			{
-				
-//				Path p = new Path();
-//				p.setName( item.getValue() );
-//				p.setParent( item.getParent().getValue() );
-//				p.setContents( model.getFileList( currentPath ) );
-//				model.addDirectory( currentPath, p );
-//				pathMap.put( currentPath, p );
-//				Path child = model.findFamily( item, pathRoot );
-//				item.getChildren().addAll( model.addLeaves( p.getFolders() ) );
+				// TODO: if dir has changed check for files & add to TreeItem
+				item.getChildren().addAll( model.addLeaves( model.getFileList( currentPath ) ) );
 				if ( !item.isExpanded() )
 					item.setExpanded( true );
 			}
@@ -229,10 +222,13 @@ public class FTPController implements Initializable
 	private void updateTableView( List<DirFile> list )
 	{
 		tableViewList = FXCollections.observableArrayList( list );
+		tableViewList.sort( 
+				( DirFile d1, DirFile d2 ) -> 
+				( d1.getName().compareTo( d2.getName() ) ) );
 		tableView.setItems( tableViewList );
 	}
 
-	private List<TreeItem<String>> writeTree()
+	private List<TreeItem<DirFile>> writeTree()
 	{
 		return model.writeTree();
 	}

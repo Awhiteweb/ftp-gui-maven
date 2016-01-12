@@ -8,7 +8,23 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-
+/**
+ * 
+ * @author Alex
+ *<br/>
+ * <p>Constructors:<br/>
+ * <ul>
+ * <li>empty</li>
+ * <li>String name</li>
+ * <li>String name, int parent</li>
+ * <li>String name, int parent, long size</li>
+ * <li>String name, int parent, DirFileType type</li>
+ * <li>String name, int parent, long size, DirFileType type</li>
+ * </ul>
+ * <br/>
+ * object returns name as toString()</p>
+ *
+ */
 @NamedQueries( { 
 	@NamedQuery( name = "DirFile.findAll", 
 			query = "SELECT f FROM DirFile f" ),
@@ -36,8 +52,39 @@ public class DirFile implements Serializable
 	private String name;
 	private int parent;
 	private DirFileType type;
-	private long size;
+	private Number size;
 
+	
+	public DirFile(){}
+	public DirFile( String name )
+	{
+		this.name = name;
+	}
+	public DirFile( String name, int parent )
+	{
+		this.name = name;
+		this.parent = parent;
+	}
+	public DirFile( String name, int parent, long size )
+	{
+		this.name = name;
+		this.parent = parent;
+		this.size = size;
+	}
+	public DirFile( String name, int parent, DirFileType type )
+	{
+		this.name = name;
+		this.parent = parent;
+		this.type = type;
+	}
+	public DirFile( String name, int parent, long size, DirFileType type )
+	{
+		this.name = name;
+		this.parent = parent;
+		this.size = size;
+		this.type = type;
+	}
+	
 	/**
 	 * @return the id
 	 */
@@ -109,7 +156,7 @@ public class DirFile implements Serializable
 	/**
 	 * @return the size
 	 */
-	public long getSize()
+	public Number getSize()
 	{
 		return size;
 	}
@@ -118,8 +165,14 @@ public class DirFile implements Serializable
 	 * @param size
 	 *            the size to set
 	 */
-	public void setSize( long size )
+	public void setSize( Number size )
 	{
 		this.size = size;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return name;
 	}
 }

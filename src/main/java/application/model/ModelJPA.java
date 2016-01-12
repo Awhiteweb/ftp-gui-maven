@@ -192,46 +192,20 @@ public class ModelJPA
 	}
 
 	/**
-	 * gets a list of the files available
-	 * @return List of directory files
-	 */
-	public List<DirFile> getFileList()
-	{
-		List<DirFile> files = new ArrayList<DirFile>();
-		try
-		{
-			ftpFileArray = ftp.listFiles();
-			for ( FTPFile file : ftpFileArray )
-			{
-				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
-				DirFile df = new DirFile();
-				df.setName( file.getName() );
-				df.setSize( file.getSize() );
-				df.setType( fileType( file.getType() ) );
-				files.add( df );
-			}
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-		return files;
-	}
-
-	/**
 	 * gets a list of the files available for the given directory
 	 * @return List of directory files
 	 */
 	public List<DirFile> getFileList( String dir )
 	{
-		dataService.resetTestData();
-		List<DirFile> files = dataService.findAll();
-		if ( files.size() > 0 )
-			return files;
-		
-		if ( pathExists( dir ) )
+		List<DirFile> files = new ArrayList<DirFile>();
+		if ( dir.equals( "/" ) )
+		{
+			dataService.resetTestData();
+			return sortDirFileList( dataService.findAll() );
+		}
+		else if ( pathExists( dir ) )
 			return getDBFiles( dir );
-
+		
 		changeDirectory( dir );
 		createParents( dir );
 		int parentId = getParentId( dir );
@@ -242,11 +216,8 @@ public class ModelJPA
 			for ( FTPFile file : ftpFileArray )
 			{
 				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
-				DirFile f = new DirFile();
-				f.setName( file.getName() );
-				f.setType( fileType( file.getType() ) );
-				f.setSize( file.getSize() );
-				f.setParent( parentId );
+				DirFile f = new DirFile( file.getName(), parentId, 
+						file.getSize(), fileType( file.getType() ) );
 				dataService.saveOrPersist( f );
 				files.add( f );
 			}
@@ -255,9 +226,13 @@ public class ModelJPA
 		{
 			e.printStackTrace();
 		}
-		return files;
+		return sortDirFileList( files );
 	}
 
+	/**
+	 * @param dir path to search
+	 * @return sorted List from database
+	 */
 	private List<DirFile> getDBFiles( String dir )
 	{
 		String[] path = dirToArray( dir );
@@ -266,9 +241,13 @@ public class ModelJPA
 		{
 			parent = dataService.findByNameAndParent( path[i], parent.getId() );
 		}
-		return dataService.findByParent( parent.getId() );
+		return sortDirFileList( dataService.findByParent( parent.getId() ) );
 	}
 
+	/**
+	 * @param dir path to split
+	 * @return ordered array of the directory
+	 */
 	private String[] dirToArray( String dir )
 	{
 		dir = dir.substring( 0, 1 ).equals( "/" ) ? dir.substring( 1 ) : dir;
@@ -291,11 +270,7 @@ public class ModelJPA
 		DirFile child = dataService.findByNameAndParent( path, parent );
 		if ( child == null )
 		{
-			DirFile c = new DirFile();
-			c.setName( path );
-			c.setParent( parent );
-			c.setType( DirFileType.FOLD );
-			dataService.saveOrPersist( c );
+			dataService.saveOrPersist( new DirFile( path, parent, DirFileType.FOLD ) );
 			addChild( path, parent );
 		}
 		return child;
@@ -387,35 +362,34 @@ public class ModelJPA
 	 * @return a list of TreeItems from the database
 	 * 		using file names
 	 */
-	public List<TreeItem<String>> writeTree() 
+	public List<TreeItem<DirFile>> writeTree() 
 	{
-		List<TreeItem<String>> list = addChildren( 0 );
+		List<TreeItem<DirFile>> list = addChildren( 0 );
 		if ( list != null )
 			return list;
-		return new ArrayList<TreeItem<String>>();
+		return new ArrayList<TreeItem<DirFile>>();
 	}
 
-	private List<TreeItem<String>> addChildren( int parent )
+	private List<TreeItem<DirFile>> addChildren( int parent )
 	{
-		List<TreeItem<String>> list = new ArrayList<TreeItem<String>>();
+		List<TreeItem<DirFile>> list = new ArrayList<TreeItem<DirFile>>();
 		for ( DirFile f : dataService.findByParent( parent ) )
 		{
 			if ( f.getType() == DirFileType.FOLD )
 			{
-				TreeItem<String> item = new TreeItem<String>( f.getName() );
-				List<TreeItem<String>> children = addChildren( f.getId() );
+				TreeItem<DirFile> item = new TreeItem<DirFile>( f );
+				List<TreeItem<DirFile>> children = addChildren( f.getId() );
 				if ( children != null )
-					item.getChildren().addAll( children );
+					item.getChildren().addAll( sortTreeList( children ) );
 				list.add( item );
 			}
 		}
 		if ( list.size() < 1 )
 			return null;
-		list.sort( ( t1, t2 ) -> ( t1.getValue().compareTo( t2.getValue() ) ) );
-		return list;
+		return sortTreeList( list );
 	}
 	
-	public TreeItem<String> getTreeItems() 
+	public TreeItem<DirFile> getTreeItems() 
 	{
 		// TODO Auto-generated method stub
 		return null;
@@ -469,14 +443,12 @@ public class ModelJPA
 	 * @param list of items to convert into Tree items
 	 * @return list of tree items
 	 */
-	public List<TreeItem<String>> addLeaves( List<String> list )
+	public List<TreeItem<DirFile>> addLeaves( List<DirFile> list )
 	{
-		List<TreeItem<String>> branches = new ArrayList<TreeItem<String>>();
-		for ( String s : list )
-			branches.add( new TreeItem<String>( s ) );
-		Collections.sort( branches, ( TreeItem<String> t1, TreeItem<String> t2 ) -> 
-							t1.getValue().compareToIgnoreCase( t2.getValue() ) );
-		return branches;
+		List<TreeItem<DirFile>> branches = new ArrayList<TreeItem<DirFile>>();
+		for ( DirFile s : list )
+			branches.add( new TreeItem<DirFile>( s ) );
+		return sortTreeList( branches );
 	}
 	
 	/**
@@ -484,15 +456,16 @@ public class ModelJPA
 	 * @param root the name of the directory root
 	 * @return directory path
 	 */
-	public String getCurrentDirectoryString( TreeItem<String> item, String root )
+	public String getCurrentDirectoryString( TreeItem<DirFile> item, String root )
 	{
 		String path = "";
 		boolean end = false;
 		while ( !end )
 		{
-			if ( item.getValue().equalsIgnoreCase( "root" ) )
+			if ( item.getValue().toString().equalsIgnoreCase( "root" ) )
 			{
-				path = root + path;
+				if ( !root.equals( "/" ) )
+					path = root + path;
 				end = true;
 			}
 			else
@@ -517,4 +490,16 @@ public class ModelJPA
 		dataService.saveOrPersist( file );
 	}
 
+	private List<TreeItem<DirFile>> sortTreeList( List<TreeItem<DirFile>> list )
+	{
+		list.sort( ( t1, t2 ) -> 
+					t1.getValue().toString().compareToIgnoreCase( t2.getValue().toString() ) );
+		return list;
+	}
+	
+	private List<DirFile> sortDirFileList( List<DirFile> list )
+	{
+		list.sort( ( f1, f2 ) -> f1.toString().compareToIgnoreCase( f2.toString() ) );
+		return list;
+	}
 }
