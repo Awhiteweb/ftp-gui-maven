@@ -96,9 +96,11 @@ public class FTPController implements Initializable
 		Boolean remember = rememberDetails.isSelected();
 		wTc( "connecting" );
 		setConnectionDetails( remember );
-		currentPath += directoryField.getText();
+		currentPath += directoryField.getText().substring( 0, 1 ).equals( "/" ) 
+				? directoryField.getText( 1, directoryField.getText().length() )
+						: directoryField.getText() ;
 		rootPath = currentPath;
-		model.startDirectory( currentPath, directoryField.getText(), "root" );
+//		model.startDirectory( currentPath, directoryField.getText(), "root" );
 		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", 
 				connDetails.get( AccountKeys.HOST ), 
 				connDetails.get( AccountKeys.USERNAME ) ) );
@@ -141,7 +143,7 @@ public class FTPController implements Initializable
 		
 	}
 
-	public ModelJPA getModel()
+	private ModelJPA getModel()
 	{
 		if ( model == null )
 			model = new ModelJPA();

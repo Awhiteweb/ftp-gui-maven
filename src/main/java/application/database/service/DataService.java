@@ -3,7 +3,10 @@ package application.database.service;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import javax.persistence.Persistence;
+import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaQuery;
 
 import application.model.data.DirFile;
@@ -70,10 +73,9 @@ public class DataService
 	
 	public DirFile findByNameAndParent( String name, int parent )
 	{
-		return entityManager.createNamedQuery( "DirFile.findByNameAndParent", DirFile.class )
+		return catchResult( entityManager.createNamedQuery( "DirFile.findByNameAndParent", DirFile.class )
 				.setParameter( "name", name )
-				.setParameter( "parent", parent )
-				.getSingleResult();
+				.setParameter( "parent", parent ) );
 	}
 
 	public List<DirFile> findByParent( int filter )
@@ -110,6 +112,18 @@ public class DataService
 				df.setType( (DirFileType) file[2] );
 				saveOrPersist( df );
 			}
+		}
+	}
+	
+	private DirFile catchResult( TypedQuery<DirFile> query )
+	{
+		try
+		{
+			return query.getSingleResult();
+		}
+		catch( NoResultException | NonUniqueResultException e )
+		{
+			return null;
 		}
 	}
 	

@@ -4,7 +4,6 @@ import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -27,13 +26,20 @@ import javafx.scene.control.TreeItem;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+/**
+ * 
+ * @author Alex.White
+ * TODO
+ * <ul>
+ * <li>debug ftp getting initial set of files</li>
+ * </ul>
+ */
 public class ModelJPA
 {	
 	private DataService dataService;
 	private AccountService accountService;
 	
 	private ObservableList<String> accounts;
-	private List<String> familyTree;
 	private static FTPClient ftp;
 	private static FTPClientConfig config;
 	private int ftpReplyCode;
@@ -52,6 +58,7 @@ public class ModelJPA
 		dataService = new DataService();
 		accounts = FXCollections.observableArrayList();
 		accountService = new AccountService();
+		accountService.resetData();
 		List<Account> accs = accountService.findAll();
 		for ( Account acc : accs )
 		{
@@ -175,6 +182,10 @@ public class ModelJPA
 		return false;
 	}
 	
+	/*
+	 * TODO: needs to recognise if the inital root had a path name i.e. public_html 
+	 * and update the path[] so it searches for: name&parent( path[1], 0 ) 
+	 */
 	private boolean pathExists( String dir )
 	{
 		String[] path = dirToArray( dir );
@@ -182,6 +193,8 @@ public class ModelJPA
 			return false;
 		
 		DirFile parent = dataService.findByNameAndParent( path[0], 0 );
+		if ( parent == null )
+			return false;
 		for ( int i = 1; i < path.length; i++ )
 		{
 			parent = dataService.findByNameAndParent( path[i], parent.getId() );
@@ -259,6 +272,8 @@ public class ModelJPA
 	{
 		String[] path = dirToArray( dir );
 		DirFile parent = dataService.findByNameAndParent( path[0], 0 );
+		if ( parent == null )
+			return;
 		for ( int i = 1; i < path.length; i++ )
 		{
 			parent = addChild( path[i], parent.getId() );
@@ -280,6 +295,8 @@ public class ModelJPA
 	{
 		String[] path = dirToArray( dir );
 		DirFile parent = dataService.findByNameAndParent( path[0], 0 );
+		if ( parent == null )
+			return 0;
 		for ( int i = 1; i < path.length; i++ )
 		{
 			parent = dataService.findByNameAndParent( path[i], parent.getId() );
@@ -395,50 +412,6 @@ public class ModelJPA
 		return null;
 	}
 
-//	private void listChildren( String root, TreeItem<String> child )
-//	{
-//		familyTree.add( child.getValue() );
-//		if ( child.getValue().equals( root ) )
-//			return;
-//		listChildren( root, child.getParent() );
-//	}
-	
-//	private Path getPathObject( Path root, String name )
-//	{
-//		if ( root.getChild( name ) != null )
-//			return root.getChild( name );
-//		String dir = "";
-//		for ( String s : familyTree )
-//		{
-//			dir = s + "/" + dir;
-//		}
-//		List<FileDetails> list = getFileList( dir );
-//		Path item = new Path();
-//		item.setName( name );
-//		item.setParent( root.getName() );
-//		item.setContents( list );
-//		return item;
-//	}
-	
-//	public Path findFamily( TreeItem<String> item, Path pathRoot ) 
-//	{
-//		Path returnItem = pathRoot;
-//		familyTree = new ArrayList<String>();
-//		listChildren( pathRoot.getName(), item );
-//		if ( item.getValue().equals( pathRoot.getName() ) )
-//			return pathRoot;
-//		if ( item.getParent().getValue().equals( pathRoot.getName() ) )
-//			return getPathObject( pathRoot, item.getValue() );
-//		for ( int i = familyTree.size() - 2; i == 0; i-- )
-//		{
-//			if ( i == 0 )
-//				returnItem = getPathObject( returnItem, familyTree.get( i ) );
-//			else
-//				returnItem = returnItem.getChild( familyTree.get( i ) );
-//		}
-//		return returnItem;
-//	}
-	
 	/**
 	 * @param list of items to convert into Tree items
 	 * @return list of tree items
@@ -483,11 +456,12 @@ public class ModelJPA
 			return; 
 		DirFile file = new DirFile();
 		List<DirFile> files = dataService.findByName( parent );
-		if ( files == null )
+		if ( files == null || files.size() < 1 )
+			System.out.println( "nothing in database" );
 			//	connect to ftp
-		
+		else
 		// TODO: needs updating 
-		dataService.saveOrPersist( file );
+			dataService.saveOrPersist( file );
 	}
 
 	private List<TreeItem<DirFile>> sortTreeList( List<TreeItem<DirFile>> list )
@@ -502,4 +476,5 @@ public class ModelJPA
 		list.sort( ( f1, f2 ) -> f1.toString().compareToIgnoreCase( f2.toString() ) );
 		return list;
 	}
+
 }
