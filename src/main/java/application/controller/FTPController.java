@@ -101,6 +101,7 @@ public class FTPController implements Initializable
 				? directoryField.getText( 1, directoryField.getText().length() )
 						: directoryField.getText() ;
 		rootPath = currentPath;
+		wTc( currentPath );
 		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", 
 				connDetails.get( AccountKeys.HOST ), 
 				connDetails.get( AccountKeys.USERNAME ) ) );
@@ -197,7 +198,7 @@ public class FTPController implements Initializable
 
 	private void setTreeRoot()
 	{
-		root.getChildren().addAll( writeTree() );
+		root.getChildren().addAll( model.writeTree() );
 		root.setExpanded( true );
 		treeView.setRoot( root );
 	}
@@ -230,9 +231,9 @@ public class FTPController implements Initializable
 		tableView.setItems( tableViewList );
 	}
 
-	private List<TreeItem<DirFile>> writeTree()
-	{
-		return model.writeTree();
-	}
+//	private List<TreeItem<DirFile>> writeTree()
+//	{
+//		return model.writeTree();
+//	}
 	
 }

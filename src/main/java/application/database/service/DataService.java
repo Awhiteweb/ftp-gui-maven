@@ -134,4 +134,10 @@ public class DataService
 		ensureTestData();
 	}
 
+	public void truncate()
+	{
+		if ( findAll().isEmpty() )
+			return;
+		entityManager.createNativeQuery( "truncate table DirFile" ).executeUpdate();
+	}
 }

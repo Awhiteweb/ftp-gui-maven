@@ -41,7 +41,7 @@ public class ModelJPA
 	
 	private ObservableList<String> accounts;
 	private static FTPClient ftp;
-	private static FTPClientConfig config;
+//	private static FTPClientConfig config;
 	private int ftpReplyCode;
 	private FTPFile[] ftpFileArray;
 	private String root;
@@ -78,7 +78,7 @@ public class ModelJPA
 	
 	/**
 	 * returns the username and password for the given account
-	 * @param host account
+	 * @param account the host account
 	 * @return Account object with all details
 	 */
 	public Account getLoginDetails( String account )
@@ -88,7 +88,7 @@ public class ModelJPA
 	
 	/**
 	 * Connects to the ftp server
-	 * @param connDetails
+	 * @param connDetails connection details
 	 * @return string message for apps console log
 	 */
 	public String connect( HashMap<AccountKeys, String> connDetails )
@@ -135,7 +135,7 @@ public class ModelJPA
 	private void configure()
 	{
 		ftp = new FTPClient();
-		config = new FTPClientConfig();
+		FTPClientConfig config = new FTPClientConfig();
 		ftp.configure( config );
 	}
 	
@@ -144,6 +144,7 @@ public class ModelJPA
 	 */
 	public void logout()
 	{
+		dataService.truncate();
 		if( ftp != null && ftp.isConnected() )
 			try 
 			{
@@ -163,7 +164,6 @@ public class ModelJPA
 	 * the connects to ftp and retrieves files
 	 * @param dir String directory to change to
 	 * @return boolean of success or failure
-	 * @throws IOException
 	 */
 	public boolean changeDirectory( String dir )
 	{
@@ -222,7 +222,8 @@ public class ModelJPA
 				DirFile f = new DirFile( file.getName(), 0, 
 						file.getSize(), fileType( file.getType() ) );
 				dataService.saveOrPersist( f );
-				files.add( f );
+				if ( f.getType() != DirFileType.FOLD )
+					files.add( f );
 			}
 		}
 		catch (IOException e)
@@ -239,7 +240,6 @@ public class ModelJPA
 	 */
 	public List<DirFile> getFileList( String dir )
 	{
-		List<DirFile> files = new ArrayList<DirFile>();
 		if ( dir.equals( "/" ) )
 		{
 			dataService.resetTestData();
@@ -251,7 +251,7 @@ public class ModelJPA
 		changeDirectory( dir );
 		createParents( dir );
 		int parentId = getParentId( dir );
-		files = new ArrayList<DirFile>();
+		List<DirFile> files = new ArrayList<DirFile>();
 		try
 		{
 			ftpFileArray = ftp.listFiles();
@@ -293,8 +293,7 @@ public class ModelJPA
 	private String[] dirToArray( String dir )
 	{
 		dir = dir.substring( 0, 1 ).equals( "/" ) ? dir.substring( 1 ) : dir;
-		String[] path = dir.split( "/" );
-		return path;
+		return dir.split( "/" );
 	}
 	
 	private void createParents( String dir )
@@ -336,8 +335,8 @@ public class ModelJPA
 	
 	/**
 	 * opens a file explorer window
-	 * @param event
-	 * @param desktop
+	 * @param event object
+	 * @param desktop object
 	 * @param direction: <ul><li><strong>true</strong> to download or </li>
 	 * 					 <li><strong>false</strong> to upload</li></ul>
 	 */
@@ -449,7 +448,10 @@ public class ModelJPA
 	{
 		List<TreeItem<DirFile>> branches = new ArrayList<TreeItem<DirFile>>();
 		for ( DirFile s : list )
-			branches.add( new TreeItem<DirFile>( s ) );
+		{
+			if ( s.getType() != DirFileType.FOLD )
+				branches.add( new TreeItem<DirFile>( s ) );
+		}
 		return sortTreeList( branches );
 	}
 	
