@@ -449,7 +449,7 @@ public class ModelJPA
 		List<TreeItem<DirFile>> branches = new ArrayList<TreeItem<DirFile>>();
 		for ( DirFile s : list )
 		{
-			if ( s.getType() != DirFileType.FOLD )
+			if ( s.getType() == DirFileType.FOLD )
 				branches.add( new TreeItem<DirFile>( s ) );
 		}
 		return sortTreeList( branches );

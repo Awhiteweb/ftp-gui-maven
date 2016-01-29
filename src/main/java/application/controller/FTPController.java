@@ -123,7 +123,7 @@ public class FTPController implements Initializable
 	@FXML
 	public void handleRefresh( ActionEvent event )
 	{
-		writeTree();
+		setTreeRoot();
 	}
 
 	@FXML
