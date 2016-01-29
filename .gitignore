@@ -7,4 +7,6 @@ target
 .factorypath
 /database
 derby.log
+.idea
+*.iml
 

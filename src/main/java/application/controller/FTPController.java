@@ -90,7 +90,8 @@ public class FTPController implements Initializable
 	
 	@FXML 
 	public void handleLoginButton( ActionEvent event ) 
-	{		
+	{
+		// TODO: needs to truncate the files database when clicked *CriteriaDelete*
 		if ( model != null )
 			model.logout();
 		Boolean remember = rememberDetails.isSelected();
@@ -100,13 +101,12 @@ public class FTPController implements Initializable
 				? directoryField.getText( 1, directoryField.getText().length() )
 						: directoryField.getText() ;
 		rootPath = currentPath;
-//		model.startDirectory( currentPath, directoryField.getText(), "root" );
 		wTc( String.format( "Connecting to: %nHost: %s,%nas User: %s", 
 				connDetails.get( AccountKeys.HOST ), 
 				connDetails.get( AccountKeys.USERNAME ) ) );
 		wTc( model.connect( connDetails ) );
 		wTc( "getting server contents" );
-		updateTableView( model.getFileList( currentPath ) );
+		updateTableView( model.getFileList() );
 		setTreeRoot();
 		wTc( "done" );
 		accordian.setExpandedPane( fileViewerTitledPane );

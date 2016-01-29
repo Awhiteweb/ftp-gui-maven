@@ -44,6 +44,7 @@ public class ModelJPA
 	private static FTPClientConfig config;
 	private int ftpReplyCode;
 	private FTPFile[] ftpFileArray;
+	private String root;
 	
 	/**
 	 * sets up model 
@@ -110,6 +111,7 @@ public class ModelJPA
 				System.exit(1);
 			}
 			ftp.changeWorkingDirectory( connDetails.get( AccountKeys.PATH ) );
+			root = connDetails.get( AccountKeys.PATH );
 			return "connected to server: reply code - " + ftpReplyCode;
 		}
 		catch (IOException e)
@@ -204,6 +206,33 @@ public class ModelJPA
 		return true;
 	}
 
+	/**
+	 * Only used with login
+	 * @return file list for root directory from ftp server
+	 */
+	public List<DirFile> getFileList()
+	{
+		List<DirFile> files = new ArrayList<DirFile>();
+		try
+		{
+			ftpFileArray = ftp.listFiles();
+			for ( FTPFile file : ftpFileArray )
+			{
+				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
+				DirFile f = new DirFile( file.getName(), 0, 
+						file.getSize(), fileType( file.getType() ) );
+				dataService.saveOrPersist( f );
+				files.add( f );
+			}
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		return sortDirFileList( files );
+	}
+
+	
 	/**
 	 * gets a list of the files available for the given directory
 	 * @return List of directory files
