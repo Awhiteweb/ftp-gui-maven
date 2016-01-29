@@ -42,7 +42,6 @@ public class ModelJPA
 	private ObservableList<String> accounts;
 	private static FTPClient ftp;
 //	private static FTPClientConfig config;
-	private int ftpReplyCode;
 	private FTPFile[] ftpFileArray;
 	private String root;
 	
@@ -102,7 +101,7 @@ public class ModelJPA
 			ftp.connect( connDetails.get( AccountKeys.HOST ) );
 			ftp.login( connDetails.get( AccountKeys.USERNAME ), 
 					   connDetails.get( AccountKeys.PASSWORD ) );
-			ftpReplyCode = ftp.getReplyCode();
+			int ftpReplyCode = ftp.getReplyCode();
 			ftp.setControlKeepAliveTimeout(300); // stays alive for 5 mins
 			if( !FTPReply.isPositiveCompletion( ftpReplyCode ) )
 			{
@@ -233,12 +232,8 @@ public class ModelJPA
 		return sortDirFileList( files );
 	}
 
-	
-	/**
-	 * gets a list of the files available for the given directory
-	 * @return List of directory files
-	 */
-	public List<DirFile> getFileList( String dir )
+
+	public List<DirFile> getAll( String dir )
 	{
 		if ( dir.equals( "/" ) )
 		{
@@ -247,7 +242,7 @@ public class ModelJPA
 		}
 		else if ( pathExists( dir ) )
 			return getDBFiles( dir );
-		
+
 		changeDirectory( dir );
 		createParents( dir );
 		int parentId = getParentId( dir );
@@ -258,7 +253,7 @@ public class ModelJPA
 			for ( FTPFile file : ftpFileArray )
 			{
 				System.out.printf( "File type: %d | File name: %s%n", file.getType(), file.getName() );
-				DirFile f = new DirFile( file.getName(), parentId, 
+				DirFile f = new DirFile( file.getName(), parentId,
 						file.getSize(), fileType( file.getType() ) );
 				dataService.saveOrPersist( f );
 				files.add( f );
@@ -269,6 +264,30 @@ public class ModelJPA
 			e.printStackTrace();
 		}
 		return sortDirFileList( files );
+	}
+
+	/**
+	 * gets a list of the files available for the given directory
+	 * @return List of directory files
+	 */
+	public List<DirFile> getFileList( String dir )
+	{
+		List<DirFile> files = new ArrayList<>();
+
+		for ( DirFile f : getAll( dir ) )
+			if ( displayFile( f ) )
+				files.add( f );
+		return files;
+	}
+
+	public List<DirFile> getFolderList( String dir )
+	{
+		List<DirFile> files = new ArrayList<>();
+
+		for ( DirFile f : getAll( dir ) )
+			if ( displayFold( f ) )
+				files.add( f );
+		return files;
 	}
 
 	/**

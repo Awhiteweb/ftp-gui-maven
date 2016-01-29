@@ -214,7 +214,7 @@ public class FTPController implements Initializable
 			if ( model.changeDirectory( currentPath ) )
 			{
 				// TODO: if dir has changed check for files & add to TreeItem
-				item.getChildren().addAll( model.addLeaves( model.getFileList( currentPath ) ) );
+				item.getChildren().addAll( model.addLeaves( model.getFolderList( currentPath ) ) );
 				if ( !item.isExpanded() )
 					item.setExpanded( true );
 			}
@@ -230,10 +230,5 @@ public class FTPController implements Initializable
 				( d1.getName().compareTo( d2.getName() ) ) );
 		tableView.setItems( tableViewList );
 	}
-
-//	private List<TreeItem<DirFile>> writeTree()
-//	{
-//		return model.writeTree();
-//	}
 	
 }
