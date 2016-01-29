@@ -222,7 +222,7 @@ public class ModelJPA
 				DirFile f = new DirFile( file.getName(), 0, 
 						file.getSize(), fileType( file.getType() ) );
 				dataService.saveOrPersist( f );
-				if ( f.getType() != DirFileType.FOLD )
+				if ( displayFile( f ) )
 					files.add( f );
 			}
 		}
@@ -420,7 +420,7 @@ public class ModelJPA
 		List<TreeItem<DirFile>> list = new ArrayList<TreeItem<DirFile>>();
 		for ( DirFile f : dataService.findByParent( parent ) )
 		{
-			if ( f.getType() == DirFileType.FOLD )
+			if ( displayFold( f ) )
 			{
 				TreeItem<DirFile> item = new TreeItem<DirFile>( f );
 				List<TreeItem<DirFile>> children = addChildren( f.getId() );
@@ -447,10 +447,10 @@ public class ModelJPA
 	public List<TreeItem<DirFile>> addLeaves( List<DirFile> list )
 	{
 		List<TreeItem<DirFile>> branches = new ArrayList<TreeItem<DirFile>>();
-		for ( DirFile s : list )
+		for ( DirFile f : list )
 		{
-			if ( s.getType() == DirFileType.FOLD )
-				branches.add( new TreeItem<DirFile>( s ) );
+			if ( displayFold( f ) )
+				branches.add( new TreeItem<DirFile>( f ) );
 		}
 		return sortTreeList( branches );
 	}
@@ -508,4 +508,19 @@ public class ModelJPA
 		return list;
 	}
 
+	private boolean displayFold( DirFile f )
+	{
+		if ( f.getName().equals( "." ) || f.getName().equals( ".." ) )
+			return false;
+		if ( f.getType() == DirFileType.FOLD )
+			return true;
+		return false;
+	}
+
+	private boolean displayFile( DirFile f )
+	{
+		if ( f.getName().equals( "." ) || f.getName().equals( ".." ) || f.getType() == DirFileType.FOLD )
+			return false;
+		return true;
+	}
 }
